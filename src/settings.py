@@ -4,7 +4,7 @@ import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
-DOTENV_PATH = join(dirname(__file__), '.env')
+DOTENV_PATH = join(dirname(__file__), '..', '.env')
 load_dotenv(DOTENV_PATH)
 
 APP_SECRET = os.environ.get('APP_SECRET')
