@@ -1,6 +1,7 @@
 """Functions related to Facebook authentication"""
 import requests
-import settings
+
+from chineurs import settings
 
 
 APP_ID = '1674357806183024'

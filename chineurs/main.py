@@ -1,11 +1,9 @@
 """Entry point for chineurs server"""
 import urllib
 
-import facebook_authentication
 from flask import Flask, redirect, render_template, request, url_for
-import group_feed
-import settings
-import timestamp
+
+from chineurs import facebook_authentication, group_feed, settings, timestamp
 
 
 APP = Flask(__name__)
