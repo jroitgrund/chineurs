@@ -31,7 +31,7 @@ def chine():
     access_token = facebook_authentication.get_access_token(
         request.args.get('code'), get_redirect_uri(group_id))
     return render_template(
-        'index.html', urls=group_feed.get_group_youtube_links(
+        'index.html', urls=group_feed.get_youtube_links(
             group_id, access_token, earliest_timestamp))
 
 

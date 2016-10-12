@@ -5,20 +5,19 @@ import re
 import requests
 
 FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
-YOUTUBE_URL_REGEX = re.compile('.*')
+YOUTUBE_URL_REGEX = re.compile('youtube.com')
 
 
-def get_group_youtube_links(
+def get_youtube_links(
         group_id, access_token, earliest_timestamp):
     """Returns a list of all YouTube links in a group's feed"""
     earliest_datetime = get_datetime(earliest_timestamp)
     uri = ('https://graph.facebook.com/v2.8/%s/feed?access_token=%s' %
            (group_id, access_token))
-    posts_response = requests.get(uri).json()
-    new_posts = posts_response['data']
     posts = []
-    while ('paging' in posts_response and
-           len(new_posts) == len(posts_response['data'])):
+    while uri:
+        posts_response = requests.get(uri).json()
+        new_posts = posts_response['data']
         new_posts = [
             post for post in posts_response['data'] if
             get_datetime(post['updated_time']) > earliest_datetime]
@@ -26,7 +25,11 @@ def get_group_youtube_links(
             find_youtube_urls(post['message']) for post
             in new_posts
             if 'message' in post))
-        posts_response = requests.get(posts_response['paging']['next']).json()
+        if 'paging' in posts_response and (
+                len(new_posts) == len(posts_response['data'])):
+            uri = posts_response['paging']['next']
+        else:
+            uri = None
     return posts
 
 
