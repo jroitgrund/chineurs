@@ -39,7 +39,3 @@ def get_redirect_uri(group_id):
     """Returns the redirect_url parameter for requests to the FB API"""
     return '%s%s?group_id=%s' % (
         settings.REDIRECT_URI, url_for('chine'), group_id)
-
-
-if __name__ == "__main__":
-    APP.run()
