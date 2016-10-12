@@ -15,7 +15,7 @@ CONFIG = {
     'install_requires': ['flask', 'requests', 'python-dotenv', 'pytz', 'gunicorn'],
     'packages': ['chineurs'],
     'package_data': {
-        'chineurs': ['tepmlates']
+        'chineurs': ['templates']
     },
     'scripts': [],
     'name': 'chineurs'
