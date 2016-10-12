@@ -1,2 +1,7 @@
-default:
-	pylint $(shell find src -name *.py)
+default: pylint pytest
+
+pytest:
+	pytest
+
+pylint:
+	pylint $(shell find chineurs tests -name "*.py")
