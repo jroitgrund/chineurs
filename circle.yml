@@ -1,9 +1,6 @@
 machine:
   python:
     version: 3.5.2
-general:
-  artifacts:
-    - $CIRCLE_TEST_REPORTS
 test:
   post:
     - make lint
