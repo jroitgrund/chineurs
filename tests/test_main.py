@@ -38,6 +38,8 @@ def test_chine(
     monkeypatch.setattr(
             timestamp, 'get_last_timestamp', timestamp_mock)
     monkeypatch.setattr(
+            timestamp, 'write_last_timestamp', Mock())
+    monkeypatch.setattr(
             facebook_authentication,
             'get_access_token',
             facebook_authentication_mock)
