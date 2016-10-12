@@ -1,9 +1,10 @@
 """Gets or sets the last read post timestamp"""
+from datetime import datetime
 import os
 
-from datetime import datetime
-from group_feed import FACEBOOK_TIMESTAMP_FORMAT
 import pytz
+
+from chineurs.group_feed import FACEBOOK_TIMESTAMP_FORMAT
 
 
 def get_last_timestamp():
