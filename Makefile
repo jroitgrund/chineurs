@@ -1,5 +1,5 @@
-pytest:
+test:
 	pytest --junitxml=junit.xml
 
-pylint:
+lint:
 	pylint $(shell find chineurs tests -name "*.py")

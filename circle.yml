@@ -3,5 +3,5 @@ machine:
     version: 3.5.2
 test:
   post:
-    - make pylint
+    - make lint
     - make test
