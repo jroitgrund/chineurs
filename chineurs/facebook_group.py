@@ -1,4 +1,4 @@
-"""Functions related to a Facebook group's feed"""
+'''Functions related to a Facebook group's feed'''
 from datetime import datetime
 from itertools import chain
 import re
@@ -10,7 +10,7 @@ YOUTUBE_URL_REGEX = re.compile('youtube.com')
 
 def get_youtube_links(
         group_id, access_token, earliest_timestamp):
-    """Returns a list of all YouTube links in a group's feed"""
+    '''Returns a list of all YouTube links in a group's feed'''
     earliest_datetime = get_datetime(earliest_timestamp)
     uri = ('https://graph.facebook.com/v2.8/%s/feed?access_token=%s' %
            (group_id, access_token))
@@ -34,10 +34,10 @@ def get_youtube_links(
 
 
 def get_datetime(facebook_timestamp):
-    """Parses a facebook format timestamp into a datetime"""
+    '''Parses a facebook format timestamp into a datetime'''
     return datetime.strptime(facebook_timestamp, FACEBOOK_TIMESTAMP_FORMAT)
 
 
 def find_youtube_urls(post):
-    """Yields all the YouTube URLs in a wall post as an iterator"""
+    '''Yields all the YouTube URLs in a wall post as an iterator'''
     return (word for word in post.split(' ') if YOUTUBE_URL_REGEX.search(word))
