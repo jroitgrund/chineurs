@@ -9,9 +9,12 @@ class TestTimestampHandler(fake_filesystem_unittest.TestCase):
 
     def setUp(self):
         self.setUpPyfakefs()
+        self.data_directory = timestamp.settings.DATA_DIRECTORY = '/data'
+
+    def tearDown(self):
+        timestamp.settings.DATA_DIRECTORY = self.data_directory
 
     @patch('chineurs.timestamp.datetime')
-    @patch('chineurs.settings.DATA_DIRECTORY', '/data')
     def test_read_write(self, mock_datetime):
         self.fs.CreateFile('/data/group', contents='timestamp\n')
         current_time = Mock(['strftime'])
