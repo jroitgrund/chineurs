@@ -99,4 +99,4 @@ data/
 *.sublime-workspace
 
 # Deploy
-*-deploy.sh
+deploy.sh
