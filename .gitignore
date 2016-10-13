@@ -97,3 +97,6 @@ data/
 # Sublime
 *.sublime-project
 *.sublime-workspace
+
+# Deploy
+*-deploy.sh
