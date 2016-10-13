@@ -9,5 +9,5 @@ deployment:
   develop:
     branch: develop
     commands:
-      - chineurs-dev/deploy.sh
-      - sudo systemctl restart chineurs-dev.service
+      - ssh jonathan@roitgrund.me '/home/jonathan/chineurs-dev/deploy.sh'
+      - ssh jonathan@roitgrund.me 'sudo systemctl restart chineurs-dev.service'
