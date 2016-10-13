@@ -2,6 +2,6 @@ machine:
   python:
     version: 3.5.2
 test:
-  post:
+  override:
     - make lint
     - make test

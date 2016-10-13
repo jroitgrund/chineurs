@@ -31,7 +31,7 @@ def chine():
     access_token = facebook_authentication.get_access_token(
         request.args.get('code'), get_redirect_uri(group_id))
     return render_template(
-        'index.html', urls=group_feed.get_group_youtube_links(
+        'index.html', urls=group_feed.get_youtube_links(
             group_id, access_token, earliest_timestamp))
 
 
@@ -39,7 +39,3 @@ def get_redirect_uri(group_id):
     """Returns the redirect_url parameter for requests to the FB API"""
     return '%s%s?group_id=%s' % (
         settings.REDIRECT_URI, url_for('chine'), group_id)
-
-
-if __name__ == "__main__":
-    APP.run()

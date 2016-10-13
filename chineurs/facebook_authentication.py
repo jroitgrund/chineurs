@@ -1,4 +1,6 @@
 """Functions related to Facebook authentication"""
+import urllib
+
 import requests
 
 from chineurs import settings
@@ -12,7 +14,7 @@ def get_access_token(code, redirect_uri):
     uri = ('https://graph.facebook.com/v2.8/oauth/access_token?'
            'client_id=%s&redirect_uri=%s&client_secret=%s&code=%s' % (
                APP_ID,
-               redirect_uri,
+               urllib.parse.quote(redirect_uri),
                settings.APP_SECRET,
                code))
     return requests.get(uri).json()['access_token']
