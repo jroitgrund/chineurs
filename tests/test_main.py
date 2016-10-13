@@ -85,8 +85,8 @@ def test_update(update):
             sess['facebook_access_token'] = 'fb'
             sess['google_access_token'] = 'g'
         response = test_client.post('update', data={
-            'groupId': 'group',
-            'playlistId': 'playlist'
+            'group_id': 'group',
+            'playlist_id': 'playlist'
         })
     update.assert_called_once_with('fb', 'group', 'g', 'playlist')
-    assert response.data.decode('utf-8') == 'data'
+    assert response.data.decode('utf-8') == '<br>'.join('data')

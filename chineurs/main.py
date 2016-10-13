@@ -65,11 +65,11 @@ def google():
 @APP.route('/update', methods=['POST'])
 def update():
     '''Uploads all new videos to YouTube'''
-    return updates.update(
+    return '<br>'.join(updates.update(
         session['facebook_access_token'],
-        request.form['groupId'],
+        request.form['group_id'],
         session['google_access_token'],
-        request.form['playlistId'])
+        request.form['playlist_id']))
 
 
 def full_url(route):

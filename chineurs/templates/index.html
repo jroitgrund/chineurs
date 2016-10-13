@@ -8,9 +8,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body>
-      <form method="get" action=" {{ upload_url }} ">
-        <label for="groupId">Group ID</label><input type="text" id="groupId">
-        <label for="playlistId">Playlist ID</label><input type="text" id="playlistId">
+      <form method="post" action=" {{ update_url }} ">
+        <label for="groupId">Group ID</label><input type="text" id="groupId" name="group_id">
+        <label for="playlistId">Playlist ID</label><input type="text" id="playlistId" name="playlist_id">
+        <input type="submit" value="Go!">
       </form>
     </body>
 </html>
