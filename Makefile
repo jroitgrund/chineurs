@@ -2,7 +2,7 @@ default: lint test
 
 test:
 	mkdir -p $(CIRCLE_TEST_REPORTS)/junit
-	pytest --junitxml=$(CIRCLE_TEST_REPORTS)/junit/junit.xml
+	pytest --junitxml=$(CIRCLE_TEST_REPORTS)/junit/junit.xml --cov=chineurs --cov-report term-missing
 
 lint:
-	flake8 $(shell find chineurs tests -name "*.py")
+	pylint $(shell find chineurs tests -name "*.py")

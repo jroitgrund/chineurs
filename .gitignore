@@ -93,3 +93,7 @@ data/
 
 # Vim
 *.swp
+
+# Sublime
+*.sublime-project
+*.sublime-workspace

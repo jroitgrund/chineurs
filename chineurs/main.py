@@ -16,6 +16,7 @@ APP.debug = settings.DEBUG
 
 @APP.route('/')
 def home():
+    '''Home page, or redirect to auth'''
     if request.args.get('new'):
         session.clear()
     if 'facebook_access_token' in session and 'google_access_token' in session:
@@ -39,9 +40,9 @@ def authenticate():
 def facebook():
     '''Gets the Facebook auth token and stores it in cookies'''
     session['facebook_access_token'] = (
-            authentication.get_facebook_access_token(
-                request.args.get('code'),
-                full_url('facebook')))
+        authentication.get_facebook_access_token(
+            request.args.get('code'),
+            full_url('facebook')))
     uri = (
         'https://accounts.google.com/o/oauth2/v2/auth?'
         'scope=https://www.googleapis.com/auth/youtube&'
@@ -73,8 +74,9 @@ def update():
 
 
 def full_url(route):
+    '''Returns an absolute URL using the host in the request'''
     parts = urllib.parse.urlparse(request.url)
     scheme = parts[0]
     netloc = parts[1]
     return urllib.parse.urlunparse(
-            [scheme, netloc, url_for(route), None, None, None])
+        [scheme, netloc, url_for(route), None, None, None])
