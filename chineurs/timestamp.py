@@ -1,35 +1,28 @@
-"""Gets or sets the last read post timestamp"""
+'''Gets or sets the last read post timestamp'''
 from datetime import datetime
 import os
 
 import pytz
 
-from chineurs.group_feed import FACEBOOK_TIMESTAMP_FORMAT
+from chineurs import facebook_group, settings
+
+DEFAULT_TIMESTAMP = '0001-01-01T00:00:00+0000'
 
 
-def get_last_timestamp():
-    """Gets the last timestamp or the first date ever
-    from the timestamp file"""
-    data_dir_path = get_data_dir_path()
-    timestamp_file_path = os.path.join(data_dir_path, 'timestamp.txt')
-    if os.path.isdir(data_dir_path) and os.path.isfile(
-            timestamp_file_path):
-        with open(timestamp_file_path) as handle:
-            timestamp = list(handle)[0]
-        return timestamp
-    return '0001-01-01T00:00:00+0000'
+class TimestampHandler:
+    def __init__(self, group_id):
+        self.timestamp_path = os.path.join(settings.DATA_DIRECTORY, group_id)
 
+    def read(self):
+        self.last_read = datetime.now(pytz.utc)
+        if os.path.isfile(self.timestamp_path):
+            with open(self.timestamp_path) as handle:
+                return handle.read().strip()
+        return DEFAULT_TIMESTAMP
 
-def write_last_timestamp():
-    """Writes the current date to the timestamp file"""
-    if not os.path.isdir('data'):
-        os.makedirs('data')
-    timestamp_file_path = os.path.join(get_data_dir_path(), 'timestamp.txt')
-    with open(timestamp_file_path, 'w') as handle:
-        handle.write(datetime.now(pytz.utc).strftime(
-            FACEBOOK_TIMESTAMP_FORMAT))
-
-
-def get_data_dir_path():
-    """Gets the path to the data directory"""
-    return os.path.join(os.path.dirname(__file__), '..', 'data')
+    def write(self):
+        with open(self.timestamp_path, 'w') as handle:
+            print('foo')
+            print(self.last_read.strftime('YYYY'))
+            handle.write(self.last_read.strftime(
+                facebook_group.FACEBOOK_TIMESTAMP_FORMAT))

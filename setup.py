@@ -12,7 +12,12 @@ CONFIG = {
     'url': 'https://github.com/jroitgrund/chineurs',
     'author_email': 'jroitgrund@gmail.com',
     'version': '0.1',
-    'install_requires': ['flask', 'requests', 'python-dotenv', 'pytz', 'gunicorn'],
+    'install_requires': [
+        'flask',
+        'gunicorn',
+        'python-dotenv',
+        'pytz',
+        'requests'],
     'packages': ['chineurs'],
     'package_data': {
         'chineurs': ['templates/*']

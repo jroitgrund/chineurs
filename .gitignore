@@ -90,3 +90,6 @@ ENV/
 
 # App data
 data/
+
+# Vim
+*.swp

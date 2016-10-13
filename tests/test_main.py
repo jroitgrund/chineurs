@@ -1,56 +1,92 @@
-"""Tests for the flask controllers"""
-from chineurs import facebook_authentication, main, group_feed, timestamp
+'''Tests for the flask controllers'''
+from unittest.mock import patch
 
-from unittest.mock import Mock, patch
+from flask import session
 
-from flask import url_for
-import pytest
-
-
-@pytest.fixture
-def flask_test_client():
-    return main.APP.test_client()
+from chineurs import authentication, main
 
 
-@patch('chineurs.facebook_authentication.APP_ID', 'app_id')
-@patch('chineurs.settings.REDIRECT_URI', 'redirect_uri')
-def test_authenticate(flask_test_client):
-    with main.APP.test_request_context():
-        response = flask_test_client.get(url_for(
-            'authenticate', group_id='group_id'))
+def setup_module(module):
+    main.APP.secret_key = 'secret_key'
+    main.APP.testing = True
+
+
+def test_home():
+    with main.APP.test_client() as test_client:
+        response = test_client.get('/')
+        assert response.location == 'http://localhost/authenticate'
+
+
+def test_home_new():
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['facebook_access_token'] = True
+            sess['google_access_token'] = True
+        response = test_client.get('/?new=True')
+        assert len(session) == 0
+        assert response.location == 'http://localhost/authenticate'
+
+
+def test_home_with_session():
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['facebook_access_token'] = True
+            sess['google_access_token'] = True
+        response = test_client.get('/')
+        assert 'Playlist' in response.data.decode('utf-8')
+
+
+def test_authenticate():
+    with main.APP.test_client() as test_client:
+        response = test_client.get('/authenticate')
         assert response.location == (
             'https://www.facebook.com/v2.8/dialog/oauth?'
-            'client_id=app_id&redirect_uri='
-            'redirect_uri/chine%3Fgroup_id%3Dgroup_id')
+            'client_id={}&redirect_uri={}').format(
+                authentication.FACEBOOK_APP_ID,
+                '/facebook')
 
 
-@patch('chineurs.settings.REDIRECT_URI', 'redirect_uri')
-def test_chine(
-        monkeypatch,
-        flask_test_client):
-    timestamp_mock = Mock()
-    facebook_authentication_mock = Mock()
-    group_feed_mock = Mock()
-    timestamp_mock.return_value = 'last_timestamp'
-    facebook_authentication_mock.return_value = 'access_token'
-    group_feed_mock.return_value = ['foo']
+@patch('chineurs.authentication.get_facebook_access_token', autospec=True)
+def test_facebook(get_facebook_access_token_mock):
+    get_facebook_access_token_mock.return_value = 'access_token'
 
-    monkeypatch.setattr(
-            timestamp, 'get_last_timestamp', timestamp_mock)
-    monkeypatch.setattr(
-            timestamp, 'write_last_timestamp', Mock())
-    monkeypatch.setattr(
-            facebook_authentication,
-            'get_access_token',
-            facebook_authentication_mock)
-    monkeypatch.setattr(
-            group_feed, 'get_youtube_links', group_feed_mock)
+    with main.APP.test_client() as test_client:
+        response = test_client.get('/facebook?code=code')
+        get_facebook_access_token_mock.assert_called_once_with(
+                'code', '/facebook')
 
-    with main.APP.test_request_context():
-        response = flask_test_client.get(
-                url_for('chine', group_id='group_id', code='code'))
-        assert 'foo' in response.data.decode('utf-8')
-    facebook_authentication_mock.assert_called_once_with(
-            'code', 'redirect_uri/chine?group_id=group_id')
-    group_feed_mock.assert_called_once_with(
-            'group_id', 'access_token', 'last_timestamp')
+        assert session['facebook_access_token'] == 'access_token'
+        assert response.location == (
+            'https://accounts.google.com/o/oauth2/v2/auth?'
+            'scope=https://www.googleapis.com/auth/youtube&'
+            'response_type=code&'
+            'client_id={}&redirect_uri={}'.format(
+                authentication.GOOGLE_APP_ID, '/google'))
+
+
+@patch('chineurs.authentication.get_google_access_token', autospec=True)
+def test_google(get_google_access_token_mock):
+    get_google_access_token_mock.return_value = 'access_token'
+
+    with main.APP.test_client() as test_client:
+        response = test_client.get('/google?code=code')
+        get_google_access_token_mock.assert_called_once_with(
+                'code', '/google')
+
+        assert session['google_access_token'] == 'access_token'
+        assert response.location == ('http://localhost/')
+
+
+@patch('chineurs.updates.update', autospec=True)
+def test_update(update):
+    update.return_value = 'data'
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['facebook_access_token'] = 'fb'
+            sess['google_access_token'] = 'g'
+        response = test_client.post('update', data={
+            'groupId': 'group',
+            'playlistId': 'playlist'
+        })
+    update.assert_called_once_with('fb', 'group', 'g', 'playlist')
+    assert response.data.decode('utf-8') == 'data'
