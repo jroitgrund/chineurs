@@ -43,7 +43,7 @@ def test_authenticate():
             'https://www.facebook.com/v2.8/dialog/oauth?'
             'client_id={}&redirect_uri={}').format(
                 authentication.FACEBOOK_APP_ID,
-                '/facebook')
+                'http%3A//localhost/facebook')
 
 
 @patch('chineurs.authentication.get_facebook_access_token', autospec=True)
@@ -53,7 +53,7 @@ def test_facebook(get_facebook_access_token_mock):
     with main.APP.test_client() as test_client:
         response = test_client.get('/facebook?code=code')
         get_facebook_access_token_mock.assert_called_once_with(
-                'code', '/facebook')
+                'code', 'http%3A//localhost/facebook')
 
         assert session['facebook_access_token'] == 'access_token'
         assert response.location == (
@@ -61,7 +61,7 @@ def test_facebook(get_facebook_access_token_mock):
             'scope=https://www.googleapis.com/auth/youtube&'
             'response_type=code&'
             'client_id={}&redirect_uri={}'.format(
-                authentication.GOOGLE_APP_ID, '/google'))
+                authentication.GOOGLE_APP_ID, 'http%3A//localhost/google'))
 
 
 @patch('chineurs.authentication.get_google_access_token', autospec=True)
@@ -71,7 +71,7 @@ def test_google(get_google_access_token_mock):
     with main.APP.test_client() as test_client:
         response = test_client.get('/google?code=code')
         get_google_access_token_mock.assert_called_once_with(
-                'code', '/google')
+                'code', 'http%3A//localhost/google')
 
         assert session['google_access_token'] == 'access_token'
         assert response.location == ('http://localhost/')

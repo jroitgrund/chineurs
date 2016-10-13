@@ -31,7 +31,7 @@ def authenticate():
         'https://www.facebook.com/v2.8/dialog/oauth?'
         'client_id=%s&redirect_uri=%s' % (
             urllib.parse.quote(authentication.FACEBOOK_APP_ID),
-            urllib.parse.quote(url_for('facebook'))))
+            urllib.parse.quote(full_url('facebook'))))
     return redirect(uri)
 
 
@@ -41,7 +41,7 @@ def facebook():
     session['facebook_access_token'] = (
             authentication.get_facebook_access_token(
                 request.args.get('code'),
-                urllib.parse.quote(url_for('facebook'))))
+                urllib.parse.quote(full_url('facebook'))))
     uri = (
         'https://accounts.google.com/o/oauth2/v2/auth?'
         'scope=https://www.googleapis.com/auth/youtube&'
@@ -49,7 +49,7 @@ def facebook():
         'client_id={}&'
         'redirect_uri={}'.format(
             urllib.parse.quote(authentication.GOOGLE_APP_ID),
-            urllib.parse.quote(url_for('google'))))
+            urllib.parse.quote(full_url('google'))))
     return redirect(uri)
 
 
@@ -58,7 +58,7 @@ def google():
     '''Gets the Google auth token and stores it in cookies'''
     session['google_access_token'] = authentication.get_google_access_token(
         request.args.get('code'),
-        urllib.parse.quote(url_for('google')))
+        urllib.parse.quote(full_url('google')))
     return redirect(url_for('home'))
 
 
@@ -70,3 +70,11 @@ def update():
         request.form['groupId'],
         session['google_access_token'],
         request.form['playlistId'])
+
+
+def full_url(route):
+    parts = urllib.parse.urlparse(request.url)
+    scheme = parts[0]
+    netloc = parts[1]
+    return urllib.parse.urlunparse(
+            [scheme, netloc, url_for(route), None, None, None])

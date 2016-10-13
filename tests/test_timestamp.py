@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import Mock, patch
 
 from pyfakefs import fake_filesystem_unittest
