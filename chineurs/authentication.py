@@ -8,8 +8,8 @@ from chineurs import settings
 
 FACEBOOK_APP_ID = '1674357806183024'
 GOOGLE_APP_ID = (
-        '523747931727-husefd5edn8amees69gojq2scpaddbm2'
-        '.apps.googleusercontent.com')
+    '523747931727-husefd5edn8amees69gojq2scpaddbm2'
+    '.apps.googleusercontent.com')
 
 
 def get_facebook_access_token(code, redirect_uri):

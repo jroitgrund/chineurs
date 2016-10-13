@@ -48,12 +48,12 @@ def requests_get_mock():
         ]
     }
 
-    requests_get_mock = Mock()
-    requests_get_mock.side_effect = [page1, page2]
-    return requests_get_mock
+    mock = Mock()
+    mock.side_effect = [page1, page2]
+    return mock
 
 
-def test_get_youtube_links(requests_get_mock):
+def test_get_youtube_links(requests_get_mock):  # pylint: disable=W0621
     '''Tests that we get YouTube links from the Facebook API'''
     with patch('requests.get', requests_get_mock):
         links = facebook_group.get_youtube_links(
@@ -65,13 +65,13 @@ def test_get_youtube_links(requests_get_mock):
                 'access_token=access_token'),
             call('next')])
         assert links == [
-                'youtube.com/bar',
-                'youtube.com/baz',
-                'youtube.com/bam',
-                'youtube.com/bak']
+            'youtube.com/bar',
+            'youtube.com/baz',
+            'youtube.com/bam',
+            'youtube.com/bak']
 
 
-def test_get_links_timestamp(requests_get_mock):
+def test_get_links_timestamp(requests_get_mock):  # pylint: disable=W0621
     '''Tests that we get YouTube links from the Facebook API and filter out
        old ones'''
     with patch('requests.get', requests_get_mock):

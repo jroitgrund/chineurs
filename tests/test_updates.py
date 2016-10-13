@@ -1,3 +1,4 @@
+'''Tests for updates module'''
 from unittest.mock import Mock, patch
 
 from chineurs import timestamp, updates
@@ -5,7 +6,8 @@ from chineurs import timestamp, updates
 
 @patch('chineurs.facebook_group.get_youtube_links', autospec=True)
 @patch('chineurs.timestamp.TimestampHandler', autospec=True)
-def test_update(TimestampHandler, get_youtube_links):
+def test_update(TimestampHandler, get_youtube_links):  # pylint:disable=C0103
+    '''Update gets YouTube links with the correct timestamp'''
     mock_timestamp_handler = Mock(spec=timestamp.TimestampHandler)
     TimestampHandler.return_value = mock_timestamp_handler
     mock_timestamp_handler.read.return_value = 'latest'

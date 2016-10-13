@@ -6,18 +6,21 @@ from flask import session
 from chineurs import authentication, main
 
 
-def setup_module(module):
+def setup_module(module):  # pylint: disable=W0613
+    '''Set APP-wide config'''
     main.APP.secret_key = 'secret_key'
     main.APP.testing = True
 
 
 def test_home():
+    '''Home redirects to authenticate with no session cookie'''
     with main.APP.test_client() as test_client:
         response = test_client.get('/')
         assert response.location == 'http://localhost/authenticate'
 
 
 def test_home_new():
+    '''Home erases session with ?new parameter'''
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['facebook_access_token'] = True
@@ -28,6 +31,7 @@ def test_home_new():
 
 
 def test_home_with_session():
+    '''Home is served correctly with session cookie'''
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['facebook_access_token'] = True
@@ -37,6 +41,7 @@ def test_home_with_session():
 
 
 def test_authenticate():
+    '''Authetication redirects to Facebook OAuth'''
     with main.APP.test_client() as test_client:
         response = test_client.get('/authenticate')
         assert response.location == (
@@ -48,12 +53,14 @@ def test_authenticate():
 
 @patch('chineurs.authentication.get_facebook_access_token', autospec=True)
 def test_facebook(get_facebook_access_token_mock):
+    '''Facebook endpoint gets FB token, sets session cookie, redirects go
+       Google OAuth'''
     get_facebook_access_token_mock.return_value = 'access_token'
 
     with main.APP.test_client() as test_client:
         response = test_client.get('/facebook?code=code')
         get_facebook_access_token_mock.assert_called_once_with(
-                'code', 'http://localhost/facebook')
+            'code', 'http://localhost/facebook')
 
         assert session['facebook_access_token'] == 'access_token'
         assert response.location == (
@@ -66,12 +73,14 @@ def test_facebook(get_facebook_access_token_mock):
 
 @patch('chineurs.authentication.get_google_access_token', autospec=True)
 def test_google(get_google_access_token_mock):
+    '''Google endpoint gets Google token, sets session cookie, redirects to
+       home'''
     get_google_access_token_mock.return_value = 'access_token'
 
     with main.APP.test_client() as test_client:
         response = test_client.get('/google?code=code')
         get_google_access_token_mock.assert_called_once_with(
-                'code', 'http://localhost/google')
+            'code', 'http://localhost/google')
 
         assert session['google_access_token'] == 'access_token'
         assert response.location == ('http://localhost/')
@@ -79,6 +88,7 @@ def test_google(get_google_access_token_mock):
 
 @patch('chineurs.updates.update', autospec=True)
 def test_update(update):
+    '''Update endpoint calls update with session and URL data'''
     update.return_value = 'data'
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
