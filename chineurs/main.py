@@ -29,7 +29,7 @@ def authenticate():
     '''Authenticates the user with Facebook and Google'''
     uri = (
         'https://www.facebook.com/v2.8/dialog/oauth?'
-        'client_id=%s&redirect_uri=%s' % (
+        'client_id={}&redirect_uri={}'.format(
             urllib.parse.quote(authentication.FACEBOOK_APP_ID),
             urllib.parse.quote(full_url('facebook'))))
     return redirect(uri)
@@ -41,7 +41,7 @@ def facebook():
     session['facebook_access_token'] = (
             authentication.get_facebook_access_token(
                 request.args.get('code'),
-                urllib.parse.quote(full_url('facebook'))))
+                full_url('facebook')))
     uri = (
         'https://accounts.google.com/o/oauth2/v2/auth?'
         'scope=https://www.googleapis.com/auth/youtube&'
@@ -58,7 +58,7 @@ def google():
     '''Gets the Google auth token and stores it in cookies'''
     session['google_access_token'] = authentication.get_google_access_token(
         request.args.get('code'),
-        urllib.parse.quote(full_url('google')))
+        full_url('google'))
     return redirect(url_for('home'))
 
 
