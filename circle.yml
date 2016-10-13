@@ -5,3 +5,9 @@ test:
   override:
     - make lint
     - make test
+deployment:
+  develop:
+    branch: develop
+    commands:
+      - chineurs-dev/deploy.sh
+      - sudo systemctl restart chineurs-dev.service
