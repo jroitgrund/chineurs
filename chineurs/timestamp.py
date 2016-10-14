@@ -13,7 +13,7 @@ class TimestampHandler:
     '''Handles timestamping for a group by remembering the date at which
        the last timestamp was read'''
 
-    def __init__(self, group_id, uuid):
+    def __init__(self, uuid, group_id):
         self.storage = Storage(uuid)
         self.key = 'timestamp-{}'.format(group_id)
         self.last_read = None

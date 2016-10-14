@@ -22,7 +22,7 @@ class TestTimestampHandler(fake_filesystem_unittest.TestCase):
         mock_storage.return_value = mock_storage_instance
         mock_storage_instance.get.return_value = 'timestamp'
 
-        timestamp_handler = timestamp.TimestampHandler('group', 'uuid')
+        timestamp_handler = timestamp.TimestampHandler('uuid', 'group')
 
         mock_storage.assert_called_once_with('uuid')
         assert timestamp_handler.read() is 'timestamp'
@@ -42,7 +42,7 @@ class TestTimestampHandler(fake_filesystem_unittest.TestCase):
         mock_storage.return_value = mock_storage_instance
         mock_storage_instance.get.return_value = None
 
-        timestamp_handler = timestamp.TimestampHandler('group', 'uuid')
+        timestamp_handler = timestamp.TimestampHandler('uuid', 'group')
 
         mock_storage.assert_called_once_with('uuid')
         assert timestamp_handler.read() is timestamp.DEFAULT_TIMESTAMP
