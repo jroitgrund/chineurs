@@ -8,6 +8,13 @@ FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 YOUTUBE_URL_REGEX = re.compile('youtube.com')
 
 
+class ExpiredFacebookToken(Exception):
+    '''Raised when the facebook token is expired'''
+
+    def __init__(self):
+        Exception.__init__(self)
+
+
 def get_youtube_links(
         group_id, access_token, earliest_timestamp):
     '''Returns a list of all YouTube links in a group's feed'''
@@ -16,7 +23,12 @@ def get_youtube_links(
            (group_id, access_token))
     posts = []
     while uri:
-        posts_response = requests.get(uri).json()
+        try:
+            response = requests.get(uri)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise ExpiredFacebookToken()
+        posts_response = response.json()
         new_posts = posts_response['data']
         new_posts = [
             post for post in posts_response['data'] if

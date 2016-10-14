@@ -14,6 +14,7 @@ CONFIG = {
     'version': '0.1',
     'install_requires': [
         'flask',
+	'google-api-python-client',
         'gunicorn',
         'python-dotenv',
         'pytz',
