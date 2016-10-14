@@ -100,3 +100,4 @@ data/
 
 # Deploy
 deploy.sh
+run.sh
