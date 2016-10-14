@@ -1,4 +1,5 @@
 '''Entry point for chineurs server'''
+import logging
 import urllib
 
 from flask import Flask, redirect, render_template, request, session, url_for
@@ -12,6 +13,8 @@ from chineurs import (
 APP = Flask(__name__)
 APP.secret_key = settings.SECRET_KEY
 APP.debug = settings.DEBUG
+APP.logger.addHandler(logging.StreamHandler())
+APP.logger.setLevel(logging.INFO)
 
 
 @APP.route('/')
