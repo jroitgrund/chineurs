@@ -18,17 +18,19 @@ def test_update(  # pylint:disable=C0103
     mock_timestamp_handler_instance = Mock()
     mock_timestamp_handler.return_value = mock_timestamp_handler_instance
     mock_timestamp_handler_instance.read.return_value = 'latest'
-    facebook_group.get_youtube_links.return_value = ['foo']
-    youtube_playlist.list_playlist_contents.return_value = ['bar']
+    facebook_group.get_youtube_links.return_value = [
+        'youtube.com/watch?v=dasfdasfda&']
+    # youtube_playlist.list_playlist_contents.return_value = ['bar']
     authentication.get_facebook_access_token.return_value = 'fb'
     authentication.get_google_credentials.return_value = 'g'
 
-    assert updates.update('uuid', 'group', 'playlist') == ['foo', 'bar']
+    assert updates.update('uuid', 'group', 'playlist') == [
+        'youtube.com/watch?v=dasfdasfda&']
 
     mock_timestamp_handler.assert_called_once_with('uuid', 'group')
     authentication.get_facebook_access_token.assert_called_once_with('uuid')
     authentication.get_google_credentials.assert_called_once_with('uuid')
     facebook_group.get_youtube_links.assert_called_once_with(
         'group', 'fb', 'latest')
-    youtube_playlist.list_playlist_contents.assert_called_once_with(
-        'g', 'playlist')
+    youtube_playlist.insert_videos.assert_called_once_with(
+        'g', 'playlist', ['dasfdasfda'])
