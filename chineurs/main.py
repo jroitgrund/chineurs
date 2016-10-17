@@ -105,14 +105,14 @@ def google():
     return redirect(url_for('home'))
 
 
-@APP.route('/update', methods=['POST'])
+@APP.route('/update')
 @credentials_required
 def update():
     '''Uploads all new videos to YouTube'''
     return '<br>'.join(updates.update(
         session['uuid'],
-        request.form['group_id'],
-        request.form['playlist_id']))
+        request.args.get('group_id'),
+        request.args.get('playlist_id')))
 
 
 def full_url(route):

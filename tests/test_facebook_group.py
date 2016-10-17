@@ -16,11 +16,11 @@ def requests_get():
     page1.json.return_value = {
         'data': [
             {
-                'message': 'woo! youtube.com/bar is sick',
+                'message': 'woo! youtube.com/watch?v=bar is sick',
                 'updated_time': '2016-01-01T00:00:00+0000'
             },
             {
-                'message': 'woo! youtube.com/baz is sick',
+                'message': 'woo! youtube.com/watch?v=baz is sick',
                 'updated_time': '2013-01-01T00:00:00+0000'
             },
             {
@@ -35,11 +35,11 @@ def requests_get():
     page2.json.return_value = {
         'data': [
             {
-                'message': 'woo! youtube.com/bam is sick',
+                'message': 'woo! youtube.com/watch?v=bam is sick',
                 'updated_time': '2016-01-01T00:00:00+0000'
             },
             {
-                'message': 'woo! youtube.com/bak is sick',
+                'message': 'woo! youtube.com/watch?v=bak is sick',
                 'updated_time': '2016-01-01T00:00:00+0000'
             },
             {
@@ -67,10 +67,10 @@ def test_get_youtube_links(requests_get, monkeypatch):
             'access_token=access_token'),
         call('next')])
     assert links == [
-        'youtube.com/bar',
-        'youtube.com/baz',
-        'youtube.com/bam',
-        'youtube.com/bak']
+        'bar',
+        'baz',
+        'bam',
+        'bak']
 
 
 def test_get_youtube_links_expired(requests_get, monkeypatch):
@@ -87,7 +87,7 @@ def test_get_youtube_links_expired(requests_get, monkeypatch):
 
 
 # pylint: disable=W0621
-def test_get_links_timestamp(requests_get, monkeypatch):
+def test_get_links(requests_get, monkeypatch):
     '''Tests that we get YouTube links from the Facebook API and filter out
        old ones'''
     monkeypatch.setattr('requests.get', requests_get)
@@ -97,4 +97,4 @@ def test_get_links_timestamp(requests_get, monkeypatch):
     requests_get.assert_called_once_with(
         'https://graph.facebook.com/v2.8/group_id/feed?'
         'access_token=access_token')
-    assert links == ['youtube.com/bar']
+    assert links == ['bar']

@@ -4,6 +4,7 @@ import urllib
 
 import oauth2client
 from oauth2client.client import OAuth2WebServerFlow
+import oauth2client.file
 import requests
 
 from chineurs import settings
@@ -47,7 +48,9 @@ def get_google_authentication_uri(redirect_uri):
     return OAuth2WebServerFlow(
         GOOGLE_APP_ID,
         settings.GOOGLE_SECRET,
-        'https://www.googleapis.com/auth/youtube',
+        scope=[
+            'https://www.googleapis.com/auth/youtube.force-ssl',
+            'https://www.googleapis.com/auth/youtube'],
         redirect_uri=redirect_uri).step1_get_authorize_url()
 
 
@@ -58,7 +61,9 @@ def save_google_credentials(uuid, code, redirect_uri):
         storage.put(OAuth2WebServerFlow(
             GOOGLE_APP_ID,
             settings.GOOGLE_SECRET,
-            'https://www.googleapis.com/auth/youtube',
+            scope=[
+                'https://www.googleapis.com/auth/youtube.force-ssl',
+                'https://www.googleapis.com/auth/youtube'],
             redirect_uri=redirect_uri).step2_exchange(code))
 
 

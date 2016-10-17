@@ -101,3 +101,8 @@ data/
 # Deploy
 deploy.sh
 run.sh
+
+# Frontend
+frontend/node_modules
+frontend/coverage
+frontend/dist

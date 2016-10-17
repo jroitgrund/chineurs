@@ -1,14 +1,10 @@
 '''Top-level functions for querying Facebook and updating YouTube'''
-import re
 
 from chineurs import (
     authentication,
     facebook_group,
     timestamp,
     youtube_playlist)
-
-
-VIDEO_ID_REGEX = re.compile(r'/watch?v=([^&]*)')
 
 
 def update(uuid, group_id, playlist_id):
@@ -18,16 +14,11 @@ def update(uuid, group_id, playlist_id):
     latest = timestamp_handler.read()
     facebook_access_token = authentication.get_facebook_access_token(uuid)
     google_credentials = authentication.get_google_credentials(uuid)
-    urls = facebook_group.get_youtube_links(
+    ids = facebook_group.get_youtube_links(
         group_id, facebook_access_token, latest)
     youtube_playlist.insert_videos(
         google_credentials,
         playlist_id,
-        [get_video_id(url) for url in urls])
+        ids)
     timestamp_handler.write()
-    return urls
-
-
-def get_video_id(url):
-    '''Gets a video id from a YouTube url'''
-    return VIDEO_ID_REGEX.search(url).group(1)
+    return ids

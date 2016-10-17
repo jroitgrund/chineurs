@@ -97,10 +97,8 @@ def test_update(updates, authentication):
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['uuid'] = 'uuid'
-        response = test_client.post('update', data={
-            'group_id': 'group',
-            'playlist_id': 'playlist'
-        })
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
     updates.update.assert_called_once_with('uuid', 'group', 'playlist')
     assert response.data.decode('utf-8') == '<br>'.join('data')
 
@@ -119,10 +117,8 @@ def test_update_raises(updates, authentication):
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['uuid'] = 'uuid'
-        response = test_client.post('update', data={
-            'group_id': 'group',
-            'playlist_id': 'playlist'
-        })
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
         assert response.location == 'http://localhost/auth'
 
 
@@ -134,10 +130,8 @@ def test_update_facebook_missing(authentication):
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['uuid'] = 'uuid'
-        response = test_client.post('update', data={
-            'group_id': 'group',
-            'playlist_id': 'playlist'
-        })
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
         assert response.location == 'http://localhost/auth'
 
 
@@ -150,8 +144,6 @@ def test_update_google_missing(authentication):
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['uuid'] = 'uuid'
-        response = test_client.post('update', data={
-            'group_id': 'group',
-            'playlist_id': 'playlist'
-        })
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
         assert response.location == 'http://localhost/auth'

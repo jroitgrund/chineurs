@@ -5,7 +5,7 @@ import re
 import requests
 
 FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
-YOUTUBE_URL_REGEX = re.compile('youtube.com')
+VIDEO_ID_REGEX = re.compile(r'/watch\?v=([^&\s]*)')
 
 
 class ExpiredFacebookToken(Exception):
@@ -21,7 +21,7 @@ def get_youtube_links(
     earliest_datetime = get_datetime(earliest_timestamp)
     uri = ('https://graph.facebook.com/v2.8/%s/feed?access_token=%s' %
            (group_id, access_token))
-    posts = []
+    video_ids = []
     while uri:
         try:
             response = requests.get(uri)
@@ -33,8 +33,8 @@ def get_youtube_links(
         new_posts = [
             post for post in posts_response['data'] if
             get_datetime(post['updated_time']) > earliest_datetime]
-        posts.extend(chain.from_iterable(
-            find_youtube_urls(post['message']) for post
+        video_ids.extend(chain.from_iterable(
+            find_youtube_ids(post['message']) for post
             in new_posts
             if 'message' in post))
         if 'paging' in posts_response and (
@@ -42,7 +42,7 @@ def get_youtube_links(
             uri = posts_response['paging']['next']
         else:
             uri = None
-    return posts
+    return video_ids
 
 
 def get_datetime(facebook_timestamp):
@@ -50,6 +50,6 @@ def get_datetime(facebook_timestamp):
     return datetime.strptime(facebook_timestamp, FACEBOOK_TIMESTAMP_FORMAT)
 
 
-def find_youtube_urls(post):
-    '''Yields all the YouTube URLs in a wall post as an iterator'''
-    return (word for word in post.split(' ') if YOUTUBE_URL_REGEX.search(word))
+def find_youtube_ids(post):
+    '''Yields all the YouTube ids in a wall post as an iterator'''
+    return (match.group(1) for match in VIDEO_ID_REGEX.finditer(post))
