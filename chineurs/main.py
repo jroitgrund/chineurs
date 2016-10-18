@@ -1,79 +1,118 @@
 '''Entry point for chineurs server'''
-import logging
+import functools
 import urllib
+import uuid
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import redirect, render_template, request, session, url_for
 
 from chineurs import (
     authentication,
-    settings,
+    facebook_group,
     updates)
+from chineurs.app import APP
 
 
-APP = Flask(__name__)
-APP.secret_key = settings.SECRET_KEY
-APP.debug = settings.DEBUG
-APP.logger.addHandler(logging.StreamHandler())
-APP.logger.setLevel(logging.INFO)
+@APP.errorhandler(facebook_group.ExpiredFacebookToken)
+def handle_expired_facebook_token(error):  # pylint:disable=unused-argument
+    '''Handles expired facebook tokens'''
+    APP.logger.info(
+        'Facebook token expired, redirecting from {}'.format(request.url))
+    return redirect(authentication.get_facebook_authentication_uri(
+        full_url('facebook')))
+
+
+def uuid_required(route):
+    '''Wraps a route to require a UUID and redirect if not present'''
+    @functools.wraps(route)
+    def decorated_route(*args, **kwargs):
+        '''Checks if uuid is in session, redirects to authenticate if not'''
+        if 'uuid' not in session:
+            APP.logger.info('No UUID, redirecting from {}'.format(request.url))
+            return redirect(url_for('authenticate'))
+        return route(*args, **kwargs)
+    return decorated_route
+
+
+def credentials_required(route):
+    '''Wraps a route to require credentials and redirect if not present'''
+    @functools.wraps(route)
+    def decorated_route(*args, **kwargs):
+        '''Checks if uuid is in session, redirects to authenticate if not'''
+        if 'uuid' not in session:
+            APP.logger.info('No UUID, redirecting from {}'.format(request.url))
+            return redirect(url_for('authenticate'))
+        user_uuid = session['uuid']
+        if not authentication.get_facebook_access_token(user_uuid):
+            APP.logger.info(
+                'Facebook token missing, redirecting from {}'.format(
+                    request.url))
+            return redirect(authentication.get_facebook_authentication_uri(
+                full_url('facebook')))
+        if not authentication.get_google_credentials(user_uuid):
+            APP.logger.info(
+                'Google token missing, redirecting from {}'.format(
+                    request.url))
+            return redirect(authentication.get_google_authentication_uri(
+                full_url('google')))
+        return route(*args, **kwargs)
+    return decorated_route
+
+
+@APP.route('/logout')
+def logout():
+    '''Clears session'''
+    APP.logger.info('Clearing UUID')
+    session.clear()
+    return redirect(url_for('home'))
 
 
 @APP.route('/')
+@credentials_required
 def home():
-    '''Home page, or redirect to auth'''
-    if request.args.get('new'):
-        session.clear()
-    if 'facebook_access_token' in session and 'google_access_token' in session:
-        return render_template('index.html', update_url=url_for('update'))
-    else:
-        return redirect(url_for('authenticate'))
+    '''Home page'''
+    return render_template('index.html', update_url=url_for('update'))
 
 
 @APP.route('/authenticate')
 def authenticate():
     '''Authenticates the user with Facebook and Google'''
-    uri = (
-        'https://www.facebook.com/v2.8/dialog/oauth?'
-        'client_id={}&redirect_uri={}'.format(
-            urllib.parse.quote(authentication.FACEBOOK_APP_ID),
-            urllib.parse.quote(full_url('facebook'))))
-    return redirect(uri)
+    session['uuid'] = str(uuid.uuid4())
+    APP.logger.info('UUID is {}'.format(session['uuid']))
+    return redirect(
+        authentication.get_facebook_authentication_uri(full_url('facebook')))
 
 
 @APP.route('/facebook')
+@uuid_required
 def facebook():
     '''Gets the Facebook auth token and stores it in cookies'''
-    session['facebook_access_token'] = (
-        authentication.get_facebook_access_token(
-            request.args.get('code'),
-            full_url('facebook')))
-    uri = (
-        'https://accounts.google.com/o/oauth2/v2/auth?'
-        'scope=https://www.googleapis.com/auth/youtube&'
-        'response_type=code&'
-        'client_id={}&'
-        'redirect_uri={}'.format(
-            urllib.parse.quote(authentication.GOOGLE_APP_ID),
-            urllib.parse.quote(full_url('google'))))
-    return redirect(uri)
+    authentication.save_facebook_access_token(
+        session['uuid'],
+        request.args.get('code'),
+        full_url('facebook'))
+    return redirect(
+        authentication.get_google_authentication_uri(full_url('google')))
 
 
 @APP.route('/google')
+@uuid_required
 def google():
-    '''Gets the Google auth token and stores it in cookies'''
-    session['google_access_token'] = authentication.get_google_access_token(
+    '''Saves Google credentials'''
+    authentication.save_google_credentials(
+        session['uuid'],
         request.args.get('code'),
         full_url('google'))
     return redirect(url_for('home'))
 
 
-@APP.route('/update', methods=['POST'])
+@APP.route('/update')
+@credentials_required
 def update():
     '''Uploads all new videos to YouTube'''
     return '<br>'.join(updates.update(
-        session['facebook_access_token'],
-        request.form['group_id'],
-        session['google_access_token'],
-        request.form['playlist_id']))
+        session['uuid'],
+        request.args.get('group_id'),
+        request.args.get('playlist_id')))
 
 
 def full_url(route):

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from flask import session
 
-from chineurs import authentication, main
+from chineurs import facebook_group, main
 
 
 def setup_module(module):  # pylint: disable=W0613
@@ -19,84 +19,131 @@ def test_home():
         assert response.location == 'http://localhost/authenticate'
 
 
-def test_home_new():
+def test_logout():
     '''Home erases session with ?new parameter'''
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
-            sess['facebook_access_token'] = True
-            sess['google_access_token'] = True
-        response = test_client.get('/?new=True')
+            sess['uuid'] = 'uuid'
+        response = test_client.get('/logout')
         assert len(session) == 0
-        assert response.location == 'http://localhost/authenticate'
+        assert response.location == 'http://localhost/'
 
 
-def test_home_with_session():
+@patch('chineurs.main.authentication', autospec=True)
+def test_home_with_session(authentication):
     '''Home is served correctly with session cookie'''
+    authentication.get_facebook_access_token.return_value = 'foo'
+    authentication.get_google_credentials.return_value = 'foo'
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
-            sess['facebook_access_token'] = True
-            sess['google_access_token'] = True
+            sess['uuid'] = True
         response = test_client.get('/')
         assert 'Playlist' in response.data.decode('utf-8')
 
 
-def test_authenticate():
-    '''Authetication redirects to Facebook OAuth'''
+@patch('chineurs.main.authentication', autospec=True)
+def test_authenticate(authentication):
+    '''Authetication redirects to Facebook OAuth and sets session'''
+    authentication.get_facebook_authentication_uri.return_value = 'fb_uri'
     with main.APP.test_client() as test_client:
         response = test_client.get('/authenticate')
-        assert response.location == (
-            'https://www.facebook.com/v2.8/dialog/oauth?'
-            'client_id={}&redirect_uri={}').format(
-                authentication.FACEBOOK_APP_ID,
-                'http%3A//localhost/facebook')
+        assert 'uuid' in session
+        assert response.location == 'http://localhost/fb_uri'
 
 
-@patch('chineurs.authentication.get_facebook_access_token', autospec=True)
-def test_facebook(get_facebook_access_token_mock):
-    '''Facebook endpoint gets FB token, sets session cookie, redirects go
-       Google OAuth'''
-    get_facebook_access_token_mock.return_value = 'access_token'
+def test_facebook_no_uuid():
+    '''Facebook endpoint redirects to authenticate with no UUID'''
 
     with main.APP.test_client() as test_client:
         response = test_client.get('/facebook?code=code')
-        get_facebook_access_token_mock.assert_called_once_with(
-            'code', 'http://localhost/facebook')
-
-        assert session['facebook_access_token'] == 'access_token'
-        assert response.location == (
-            'https://accounts.google.com/o/oauth2/v2/auth?'
-            'scope=https://www.googleapis.com/auth/youtube&'
-            'response_type=code&'
-            'client_id={}&redirect_uri={}'.format(
-                authentication.GOOGLE_APP_ID, 'http%3A//localhost/google'))
+        assert response.location == 'http://localhost/authenticate'
 
 
-@patch('chineurs.authentication.get_google_access_token', autospec=True)
-def test_google(get_google_access_token_mock):
-    '''Google endpoint gets Google token, sets session cookie, redirects to
-       home'''
-    get_google_access_token_mock.return_value = 'access_token'
+@patch('chineurs.main.authentication', autospec=True)
+def test_facebook(authentication):
+    '''Facebook endpoint gets FB token, redirects to Google OAuth'''
+    authentication.get_google_authentication_uri.return_value = 'google_uri'
 
     with main.APP.test_client() as test_client:
-        response = test_client.get('/google?code=code')
-        get_google_access_token_mock.assert_called_once_with(
-            'code', 'http://localhost/google')
+        with test_client.session_transaction() as sess:
+            sess['uuid'] = 'uuid'
+        response = test_client.get('/facebook?code=code')
+        authentication.save_facebook_access_token.assert_called_once_with(
+            'uuid', 'code', 'http://localhost/facebook')
+        authentication.get_google_authentication_uri.assert_called_once_with(
+            'http://localhost/google')
+        assert response.location == 'http://localhost/google_uri'
 
-        assert session['google_access_token'] == 'access_token'
+
+@patch('chineurs.main.authentication', autospec=True)
+def test_google(authentication):
+    '''Google endpoint gets Google token, redirects to home'''
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['uuid'] = 'uuid'
+        response = test_client.get('/google?code=code')
+        authentication.save_google_credentials.assert_called_once_with(
+            'uuid', 'code', 'http://localhost/google')
         assert response.location == ('http://localhost/')
 
 
-@patch('chineurs.updates.update', autospec=True)
-def test_update(update):
+@patch('chineurs.main.authentication', autospec=True)
+@patch('chineurs.main.updates', autospec=True)
+def test_update(updates, authentication):
     '''Update endpoint calls update with session and URL data'''
-    update.return_value = 'data'
+    updates.update.return_value = 'data'
+    authentication.get_facebook_access_token.return_value = 'foo'
+    authentication.get_google_credentials.return_value = 'foo'
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
-            sess['facebook_access_token'] = 'fb'
-            sess['google_access_token'] = 'g'
-        response = test_client.post('update', data={
-            'group_id': 'group',
-            'playlist_id': 'playlist'
-        })
-    update.assert_called_once_with('fb', 'group', 'g', 'playlist')
+            sess['uuid'] = 'uuid'
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
+    updates.update.assert_called_once_with('uuid', 'group', 'playlist')
     assert response.data.decode('utf-8') == '<br>'.join('data')
+
+
+@patch('chineurs.main.authentication', autospec=True)
+@patch('chineurs.main.updates', autospec=True)
+def test_update_raises(updates, authentication):
+    '''If update raises an expired exception, main redirects'''
+    def raise_expired(*args, **kwargs):  # pylint:disable=unused-argument
+        '''Raises expired'''
+        raise facebook_group.ExpiredFacebookToken()
+    updates.update.side_effect = raise_expired
+    authentication.get_facebook_access_token.return_value = 'foo'
+    authentication.get_google_credentials.return_value = 'foo'
+    authentication.get_facebook_authentication_uri.return_value = 'auth'
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['uuid'] = 'uuid'
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
+        assert response.location == 'http://localhost/auth'
+
+
+@patch('chineurs.main.authentication', autospec=True)
+def test_update_facebook_missing(authentication):
+    '''Redirects if a facebook token is missing'''
+    authentication.get_facebook_access_token.return_value = None
+    authentication.get_facebook_authentication_uri.return_value = 'auth'
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['uuid'] = 'uuid'
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
+        assert response.location == 'http://localhost/auth'
+
+
+@patch('chineurs.main.authentication', autospec=True)
+def test_update_google_missing(authentication):
+    '''Redirects if a google token is missing'''
+    authentication.get_facebook_access_token.return_value = 'token'
+    authentication.get_google_credentials.return_value = None
+    authentication.get_google_authentication_uri.return_value = 'auth'
+    with main.APP.test_client() as test_client:
+        with test_client.session_transaction() as sess:
+            sess['uuid'] = 'uuid'
+        response = test_client.get(
+            '/update?group_id=group&playlist_id=playlist')
+        assert response.location == 'http://localhost/auth'
