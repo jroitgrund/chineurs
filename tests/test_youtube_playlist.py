@@ -1,5 +1,4 @@
 '''Tests for youtube playlist'''
-from asyncio import Future
 from unittest.mock import Mock, patch
 
 from chineurs import youtube_playlist
