@@ -14,8 +14,8 @@ def update(uuid, group_id, playlist_id):
     latest = timestamp_handler.read()
     facebook_access_token = authentication.get_facebook_access_token(uuid)
     google_credentials = authentication.get_google_credentials(uuid)
-    ids = facebook_group.get_youtube_links(
-        group_id, facebook_access_token, latest)
+    ids = list(facebook_group.get_youtube_links(
+        group_id, facebook_access_token, latest))
     youtube_playlist.insert_videos(
         google_credentials,
         playlist_id,
