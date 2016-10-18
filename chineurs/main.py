@@ -3,11 +3,12 @@ import functools
 import urllib
 import uuid
 
-from flask import redirect, render_template, request, session, url_for
+from flask import jsonify, redirect, render_template, request, session, url_for
 
 from chineurs import (
     authentication,
     facebook_group,
+    storage,
     updates)
 from chineurs.app import APP
 
@@ -109,10 +110,16 @@ def google():
 @credentials_required
 def update():
     '''Uploads all new videos to YouTube'''
-    return '<br>'.join(updates.update(
+    return '{}'.format(updates.update(
         session['uuid'],
         request.args.get('group_id'),
         request.args.get('playlist_id')))
+
+
+@APP.route('/done/<uuid>')
+def done(task_uuid):
+    '''Checks if a given youtube upload request if done'''
+    return jsonify(done=bool(storage.Storage(task_uuid).get('done')))
 
 
 def full_url(route):

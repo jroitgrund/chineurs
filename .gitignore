@@ -101,6 +101,7 @@ data/
 # Deploy
 deploy.sh
 run.sh
+run_celery.sh
 
 # Frontend
 frontend/node_modules
