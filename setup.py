@@ -13,13 +13,15 @@ CONFIG = {
     'author_email': 'jroitgrund@gmail.com',
     'version': '0.1',
     'install_requires': [
+        'celery',
         'flask',
         'google-api-python-client',
-        'celery',
         'gunicorn',
+        'psycopg2',
         'python-dotenv',
         'pytz',
-        'requests'],
+        'requests',
+        'yoyo-migrations'],
     'packages': ['chineurs'],
     'package_data': {
         'chineurs': ['templates/*']
