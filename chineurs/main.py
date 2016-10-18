@@ -116,7 +116,7 @@ def update():
         request.args.get('playlist_id')))
 
 
-@APP.route('/done/<uuid>')
+@APP.route('/done/<task_uuid>')
 def done(task_uuid):
     '''Checks if a given youtube upload request if done'''
     return jsonify(done=bool(storage.Storage(task_uuid).get('done')))
