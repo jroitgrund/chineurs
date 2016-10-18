@@ -49,6 +49,7 @@ def get_google_authentication_uri(redirect_uri):
         GOOGLE_APP_ID,
         settings.GOOGLE_SECRET,
         scope=[
+            'https://www.googleapis.com/auth/youtubepartner',
             'https://www.googleapis.com/auth/youtube.force-ssl',
             'https://www.googleapis.com/auth/youtube'],
         redirect_uri=redirect_uri).step1_get_authorize_url()
@@ -62,6 +63,7 @@ def save_google_credentials(uuid, code, redirect_uri):
             GOOGLE_APP_ID,
             settings.GOOGLE_SECRET,
             scope=[
+                'https://www.googleapis.com/auth/youtubepartner',
                 'https://www.googleapis.com/auth/youtube.force-ssl',
                 'https://www.googleapis.com/auth/youtube'],
             redirect_uri=redirect_uri).step2_exchange(code))

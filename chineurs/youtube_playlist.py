@@ -11,14 +11,19 @@ from chineurs.app import APP
 
 def log_error(response):
     '''Log a  response'''
-    APP.logger.error(response)
+    APP.logger.error(
+        'Error adding to playlist: {}'.format(response.body),
+        exc_info=response.error)
 
 
 def insert_videos(credentials, playlist_id, video_ids):
     '''Runs the helper in an io loop'''
     responses = tornado.ioloop.IOLoop.current().run_sync(functools.partial(
         insert_videos_helper, credentials, playlist_id, video_ids))
-    map(lambda response: response.rethrow(), responses)
+    tornado.ioloop.IOLoop.current().close()
+    for response in (response for response in responses if response.error):
+        log_error(response)
+    return responses
 
 
 async def insert_videos_helper(credentials, playlist_id, video_ids):
@@ -31,7 +36,7 @@ async def insert_videos_helper(credentials, playlist_id, video_ids):
 async def insert_video(credentials, playlist_id, video_id):
     '''Inserts a video in a playlist'''
     http_client = AsyncHTTPClient()
-    headers = {}
+    headers = {'Content-Type': 'application/json'}
     credentials.apply(headers)
     response = await http_client.fetch(
         'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
