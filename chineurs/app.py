@@ -7,5 +7,9 @@ from chineurs import settings
 
 APP = Flask(__name__)
 APP.secret_key = settings.SECRET_KEY
-APP.debug = settings.DEBUG
-APP.logger.setLevel(logging.INFO)
+
+
+HANDLER = logging.StreamHandler()
+HANDLER.setFormatter(logging.Formatter(
+    '[%(asctime)s] [%(module)s:%(lineno)d] %(levelname)s: %(message)s'))
+APP.logger.handlers = [HANDLER]
