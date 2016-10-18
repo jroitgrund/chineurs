@@ -2,16 +2,14 @@
 import requests
 
 
-def insert_videos(credentials, playlist_id, video_ids):
+def insert_videos(headers, playlist_id, video_ids):
     '''Inserts videos in a playlist asynchronously'''
-    return [insert_video(credentials, playlist_id, video_id)
+    return [insert_video(headers, playlist_id, video_id)
             for video_id in video_ids]
 
 
-def insert_video(credentials, playlist_id, video_id):
+def insert_video(headers, playlist_id, video_id):
     '''Inserts a video in a playlist'''
-    headers = {}
-    credentials.apply(headers)
     response = requests.post(
         'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
         headers=headers,

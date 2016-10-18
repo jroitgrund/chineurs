@@ -91,7 +91,7 @@ def test_google(authentication):
 @patch('chineurs.main.updates', autospec=True)
 def test_update(updates, authentication):
     '''Update endpoint calls update with session and URL data'''
-    updates.update.return_value = 'data'
+    updates.update.return_value = 'task_uuid'
     authentication.get_facebook_access_token.return_value = 'foo'
     authentication.get_google_credentials.return_value = 'foo'
     with main.APP.test_client() as test_client:
@@ -100,7 +100,7 @@ def test_update(updates, authentication):
         response = test_client.get(
             '/update?group_id=group&playlist_id=playlist')
     updates.update.assert_called_once_with('uuid', 'group', 'playlist')
-    assert response.data.decode('utf-8') == '<br>'.join('data')
+    assert response.data.decode('utf-8') == 'task_uuid'
 
 
 @patch('chineurs.main.authentication', autospec=True)

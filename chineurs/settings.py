@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 DOTENV_PATH = join(dirname(__file__), '..', '.env')
 load_dotenv(DOTENV_PATH)
 
+CELERY_BROKER = os.environ.get('CELERY_BROKER')
 DATA_DIRECTORY = os.environ.get('DATA_DIRECTORY')
 FACEBOOK_SECRET = os.environ.get('FACEBOOK_SECRET')
 GOOGLE_SECRET = os.environ.get('GOOGLE_SECRET')
