@@ -1,5 +1,4 @@
 '''Functions related to a Facebook group's feed'''
-from collections import OrderedDict
 from datetime import datetime
 from itertools import chain
 import re
@@ -46,7 +45,7 @@ def get_youtube_links(
             '{} {}'.format(
                 post.get('message', ''), post.get('link', '')))
         for post in posts)
-    return list(OrderedDict.fromkeys(video_ids).keys())
+    return reversed(list(video_ids))
 
 
 def get_datetime(facebook_timestamp):

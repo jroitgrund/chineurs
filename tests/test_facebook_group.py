@@ -68,11 +68,11 @@ def test_get_youtube_links(requests_get, monkeypatch):
             'access_token=access_token&fields=id,message,link,updated_time&'
             'limit=1000'),
         call('next')])
-    assert links == [
-        'bar',
-        'baz',
+    assert list(links) == [
+        'bak',
         'bam',
-        'bak']
+        'baz',
+        'bar']
 
 
 # pylint: disable=invalid-name
@@ -101,4 +101,4 @@ def test_get_youtube_links_filter_timestamp(requests_get, monkeypatch):
         'https://graph.facebook.com/v2.8/group_id/feed?'
         'access_token=access_token&fields=id,message,link,updated_time&'
         'limit=1000')
-    assert links == ['bar']
+    assert list(links) == ['bar']
