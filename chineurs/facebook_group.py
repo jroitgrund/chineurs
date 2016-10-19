@@ -52,7 +52,7 @@ def get_youtube_links(
             '{} {}'.format(
                 post.get('message', ''), post.get('link', '')))
         for post in posts)
-    return OrderedDict.fromkeys(video_ids).keys()
+    return reversed(OrderedDict.fromkeys(video_ids).keys())
 
 
 def get_datetime(facebook_timestamp):
