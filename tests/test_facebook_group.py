@@ -71,10 +71,10 @@ def test_get_youtube_links(requests_get, monkeypatch):
             'limit=1000'),
         call('next')])
     assert list(links) == [
-        'bar',
-        'baz',
+        'bak',
         'bam',
-        'bak']
+        'baz',
+        'bar']
 
 
 # pylint: disable=invalid-name
