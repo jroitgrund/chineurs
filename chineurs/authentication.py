@@ -54,7 +54,7 @@ def get_google_authentication_uri(redirect_uri):
 def save_google_credentials(user_id, code, redirect_uri):
     '''Save google credentials to disk if they don't exist already'''
     user = storage.get_user_by_id(user_id)
-    if 'google_credentials' not in user:
+    if not user['google_credentials']:
         storage.set_user_google_credentials(user_id, OAuth2WebServerFlow(
             GOOGLE_APP_ID,
             settings.GOOGLE_SECRET,

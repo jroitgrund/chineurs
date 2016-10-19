@@ -12,11 +12,13 @@ def setup_module(module):  # pylint: disable=W0613
     main.APP.testing = True
 
 
-def test_home():
+@patch('chineurs.main.authentication', autospec=True)
+def test_home(authentication):
     '''Home redirects to authenticate with no session cookie'''
+    authentication.get_facebook_authentication_uri.return_value = 'fb_uri'
     with main.APP.test_client() as test_client:
         response = test_client.get('/')
-        assert response.location == 'http://localhost/authenticate'
+        assert response.location == 'http://localhost/fb_uri'
 
 
 def test_logout():
@@ -37,15 +39,6 @@ def test_home_with_session(authentication):  # pylint:disable=unused-argument
             sess['user_id'] = True
         response = test_client.get('/')
         assert 'Playlist' in response.data.decode('utf-8')
-
-
-@patch('chineurs.main.authentication', autospec=True)
-def test_authenticate(authentication):
-    '''Authetication redirects to Facebook OAuth and sets session'''
-    authentication.get_facebook_authentication_uri.return_value = 'fb_uri'
-    with main.APP.test_client() as test_client:
-        response = test_client.get('/authenticate')
-        assert response.location == 'http://localhost/fb_uri'
 
 
 @patch('chineurs.main.authentication', autospec=True)

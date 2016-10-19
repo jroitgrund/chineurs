@@ -38,7 +38,7 @@ def test_save_google_credentials_get(  # pylint:disable=invalid-name
         mock_flow, mock_storage):
     '''Tests that we fetch the token from the API'''
     mock_flow.return_value.step2_exchange.return_value = 'token'
-    mock_storage.get_user_by_id.return_value = {}
+    mock_storage.get_user_by_id.return_value = {'google_credentials': None}
 
     authentication.save_google_credentials('user_id', 'code', 'redirect_uri')
 

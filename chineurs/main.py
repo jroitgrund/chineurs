@@ -29,7 +29,9 @@ def user_id_required(route):
         if 'user_id' not in session:
             APP.logger.info(
                 'No user id, redirecting from {}'.format(request.url))
-            return redirect(url_for('authenticate'))
+            return redirect(
+                authentication.get_facebook_authentication_uri(
+                    full_url('facebook')))
         return route(*args, **kwargs)
     return decorated_route
 
@@ -47,13 +49,6 @@ def logout():
 def home():
     '''Home page'''
     return render_template('index.html', update_url=url_for('update'))
-
-
-@APP.route('/authenticate')
-def authenticate():
-    '''Authenticates the user with Facebook and Google'''
-    return redirect(
-        authentication.get_facebook_authentication_uri(full_url('facebook')))
 
 
 @APP.route('/facebook')
@@ -77,7 +72,6 @@ def google():
 
 
 @APP.route('/update')
-@user_id_required
 def update():
     '''Uploads all new videos to YouTube'''
     return '{}'.format(updates.update(
