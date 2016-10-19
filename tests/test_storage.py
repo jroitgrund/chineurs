@@ -52,7 +52,11 @@ class TestStorage:
 
     def setup_method(self, method):
         '''Set up and patch connection'''
-        self.connection = psycopg2.connect('dbname=test user=chinema')
+        if settings.POSTGRES_TESTING:
+            self.connection = psycopg2.connect('dbname=test user=chinema')
+        else:
+            self.connection = psycopg2.connect(
+                'dbname=circle_test user=ubuntu host=127.0.0.1')
         self.get_db_patch = patch(
             'chineurs.storage.get_db', Mock(return_value=self.connection))
         self.get_db_patch.start()
