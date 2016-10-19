@@ -16,10 +16,16 @@ class ExpiredFacebookToken(Exception):
         Exception.__init__(self)
 
 
+def get_facebook_id(access_token):
+    '''Return the facebook id'''
+    return requests.get(
+        'https://graph.facebook.com/v2.8/me?access_token={}'.format(
+            access_token)).json()['id']
+
+
 def get_youtube_links(
-        group_id, access_token, earliest_timestamp):
+        group_id, access_token, earliest_datetime):
     '''Returns a list of all YouTube links in a group's feed'''
-    earliest_datetime = get_datetime(earliest_timestamp)
     uri = ('https://graph.facebook.com/v2.8/%s/feed?access_token=%s&'
            'fields=id,message,link,updated_time&'
            'limit=1000' % (group_id, access_token))

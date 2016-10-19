@@ -1,30 +1,26 @@
 '''Top-level functions for querying Facebook and updating YouTube'''
-import uuid
-
 from chineurs import (
-    authentication,
     celery,
     facebook_group,
+    storage,
     timestamp)
 
 
-def update(session_uuid, group_id, playlist_id):
+def update(user_id, group_id, playlist_id):
     '''Queries Facebook for new videos based on timestamp
        and updates YouTube'''
-    timestamp_handler = timestamp.TimestampHandler(session_uuid, group_id)
+    timestamp_handler = timestamp.TimestampHandler(playlist_id, group_id)
     latest = timestamp_handler.read()
-    facebook_access_token = authentication.get_facebook_access_token(
-        session_uuid)
-    google_credentials = authentication.get_google_credentials(session_uuid)
+    user = storage.get_user_by_id(user_id)  # pylint:disable=E1120
     ids = list(facebook_group.get_youtube_links(
-        group_id, facebook_access_token, latest))
-    task_uuid = str(uuid.uuid4())
+        group_id, user['fb_access_token'], latest))
+    timestamp_handler.write()
+    job_id = storage.new_job()  # pylint:disable=E1120
     headers = {}
-    google_credentials.apply(headers)
+    user['google_credentials'].apply(headers)
     celery.insert_videos.delay(
-        task_uuid,
+        job_id,
         headers,
         playlist_id,
         ids)
-    timestamp_handler.write()
-    return task_uuid
+    return job_id

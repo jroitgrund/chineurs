@@ -14,4 +14,4 @@ CELERY_APP.conf.update(
 def insert_videos(uuid, headers, playlist_id, video_ids):
     '''Inserts videos synchronously and writes to storage when done'''
     youtube_playlist.insert_videos(headers, playlist_id, video_ids)
-    storage.Storage(uuid).set('done', 'True')
+    storage.save_job_progress(uuid, 100)  # pylint:disable=E1120

@@ -1,7 +1,6 @@
 '''Entry point for chineurs server'''
 import functools
 import urllib
-import uuid
 
 from flask import jsonify, redirect, render_template, request, session, url_for
 
@@ -22,39 +21,17 @@ def handle_expired_facebook_token(error):  # pylint:disable=unused-argument
         full_url('facebook')))
 
 
-def uuid_required(route):
+def user_id_required(route):
     '''Wraps a route to require a UUID and redirect if not present'''
     @functools.wraps(route)
     def decorated_route(*args, **kwargs):
-        '''Checks if uuid is in session, redirects to authenticate if not'''
-        if 'uuid' not in session:
-            APP.logger.info('No UUID, redirecting from {}'.format(request.url))
-            return redirect(url_for('authenticate'))
-        return route(*args, **kwargs)
-    return decorated_route
-
-
-def credentials_required(route):
-    '''Wraps a route to require credentials and redirect if not present'''
-    @functools.wraps(route)
-    def decorated_route(*args, **kwargs):
-        '''Checks if uuid is in session, redirects to authenticate if not'''
-        if 'uuid' not in session:
-            APP.logger.info('No UUID, redirecting from {}'.format(request.url))
-            return redirect(url_for('authenticate'))
-        user_uuid = session['uuid']
-        if not authentication.get_facebook_access_token(user_uuid):
+        '''Checks if user_id is in session, redirects to authenticate if not'''
+        if 'user_id' not in session:
             APP.logger.info(
-                'Facebook token missing, redirecting from {}'.format(
-                    request.url))
-            return redirect(authentication.get_facebook_authentication_uri(
-                full_url('facebook')))
-        if not authentication.get_google_credentials(user_uuid):
-            APP.logger.info(
-                'Google token missing, redirecting from {}'.format(
-                    request.url))
-            return redirect(authentication.get_google_authentication_uri(
-                full_url('google')))
+                'No user id, redirecting from {}'.format(request.url))
+            return redirect(
+                authentication.get_facebook_authentication_uri(
+                    full_url('facebook')))
         return route(*args, **kwargs)
     return decorated_route
 
@@ -68,27 +45,16 @@ def logout():
 
 
 @APP.route('/')
-@credentials_required
+@user_id_required
 def home():
     '''Home page'''
     return render_template('index.html', update_url=url_for('update'))
 
 
-@APP.route('/authenticate')
-def authenticate():
-    '''Authenticates the user with Facebook and Google'''
-    session['uuid'] = str(uuid.uuid4())
-    APP.logger.info('UUID is {}'.format(session['uuid']))
-    return redirect(
-        authentication.get_facebook_authentication_uri(full_url('facebook')))
-
-
 @APP.route('/facebook')
-@uuid_required
 def facebook():
     '''Gets the Facebook auth token and stores it in cookies'''
-    authentication.save_facebook_access_token(
-        session['uuid'],
+    session['user_id'] = authentication.save_facebook_access_token(
         request.args.get('code'),
         full_url('facebook'))
     return redirect(
@@ -96,22 +62,20 @@ def facebook():
 
 
 @APP.route('/google')
-@uuid_required
 def google():
     '''Saves Google credentials'''
     authentication.save_google_credentials(
-        session['uuid'],
+        session['user_id'],
         request.args.get('code'),
         full_url('google'))
     return redirect(url_for('home'))
 
 
 @APP.route('/update')
-@credentials_required
 def update():
     '''Uploads all new videos to YouTube'''
     return '{}'.format(updates.update(
-        session['uuid'],
+        session['user_id'],
         request.args.get('group_id'),
         request.args.get('playlist_id')))
 
@@ -119,7 +83,9 @@ def update():
 @APP.route('/done/<task_uuid>')
 def done(task_uuid):
     '''Checks if a given youtube upload request if done'''
-    return jsonify(done=bool(storage.Storage(task_uuid).get('done')))
+    # pylint:disable=E1120
+    return jsonify(progress=storage.get_job_progress(task_uuid))
+    # pylint:enable=E1120
 
 
 def full_url(route):
