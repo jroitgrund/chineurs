@@ -1,71 +1,46 @@
 '''Tests for authentication'''
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from chineurs import authentication
 
 
-@patch('chineurs.authentication.Storage', autospec=True)
+@patch('chineurs.authentication.storage', spec=True)
 @patch('requests.get', autospec=True)
 @patch('chineurs.settings.FACEBOOK_SECRET', 'FACEBOOK_SECRET')
 def test_save_facebook_access_token(mock_requests_get, mock_storage):
     '''Tests that we get the token from the Facebook API'''
-    mock_response = mock_requests_get.return_value()
-    mock_requests_get.return_value = mock_response
-    mock_response.json.return_value = {'access_token': 'access_token'}
-    mock_storage_instance = Mock()
-    mock_storage.return_value = mock_storage_instance
+    mock_requests_get.return_value.json.side_effect = [
+        {'access_token': 'access_token'},
+        {'id': 'user_id'}]
+    mock_storage.get_user_id.return_value = 'id'
 
-    authentication.save_facebook_access_token('uuid', 'code', 'redirect_uri')
+    assert authentication.save_facebook_access_token(
+        'code', 'redirect_uri') == 'id'
 
-    mock_storage.assert_called_once_with('uuid')
-    mock_storage_instance.set.assert_called_once_with(
-        'facebook-token', 'access_token')
-    mock_requests_get.assert_called_once_with(
-        'https://graph.facebook.com/v2.8/oauth/access_token?'
-        'client_id={}&redirect_uri=redirect_uri&'
-        'client_secret=FACEBOOK_SECRET&code=code'.format(
-            authentication.FACEBOOK_APP_ID))
-    mock_response.json.assert_called_once_with()
+    mock_storage.get_user_id.assert_called_once_with(
+        'user_id', 'access_token')
 
 
-@patch('chineurs.authentication.Storage', autospec=True)
-@patch('oauth2client.file.Storage', autospec=True)
+@patch('chineurs.authentication.storage', spec=True)
 def test_save_google_credentials_already_have(  # pylint:disable=invalid-name
-        mock_google_storage, mock_storage):
+        mock_storage):
     '''Tests that we read the token from file storage'''
-    mock_storage_instance = Mock()
-    mock_storage.return_value = mock_storage_instance
-    mock_storage_instance.directory = '/data'
+    mock_storage.get_user_by_id.return_value = {'google_credentials': 'foo'}
 
-    mock_google_storage_instance = Mock()
-    mock_google_storage.return_value = mock_google_storage_instance
-    mock_google_storage_instance.get.return_value = 'foo'
+    authentication.save_google_credentials('user_id', 'code', 'redirect_uri')
 
-    authentication.save_google_credentials('uuid', 'code', 'redirect_uri')
-
-    mock_google_storage.assert_called_once_with('/data/google-credentials')
-    mock_google_storage_instance.get.assert_called_once_with()
+    mock_storage.set_user_google_credentials.assert_has_calls([])
 
 
-@patch('chineurs.authentication.Storage', autospec=True)
-@patch('oauth2client.file.Storage', autospec=True)
+@patch('chineurs.authentication.storage', spec=True)
 @patch('chineurs.authentication.OAuth2WebServerFlow', autospec=True)
 def test_save_google_credentials_get(  # pylint:disable=invalid-name
-        mock_flow, mock_google_storage, mock_storage):
+        mock_flow, mock_storage):
     '''Tests that we fetch the token from the API'''
-    mock_flow_instance = Mock()
-    mock_flow.return_value = mock_flow_instance
-    mock_flow_instance.step2_exchange.return_value = 'token'
+    mock_flow.return_value.step2_exchange.return_value = 'token'
+    mock_storage.get_user_by_id.return_value = {}
 
-    mock_google_storage_instance = Mock()
-    mock_google_storage.return_value = mock_google_storage_instance
-    mock_google_storage_instance.get.return_value = None
+    authentication.save_google_credentials('user_id', 'code', 'redirect_uri')
 
-    mock_storage_instance = Mock()
-    mock_storage.return_value = mock_storage_instance
-    mock_storage_instance.directory = 'data'
-
-    authentication.save_google_credentials('uuid', 'code', 'redirect_uri')
-
-    mock_google_storage.assert_called_once_with('data/google-credentials')
-    mock_google_storage_instance.put.assert_called_once_with('token')
+    mock_storage.set_user_google_credentials.assert_called_once_with(
+        'user_id', 'token')

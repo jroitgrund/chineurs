@@ -1,10 +1,12 @@
 '''Tests for facebook_group'''
-from unittest.mock import call, Mock
+from datetime import datetime
+from unittest.mock import call, Mock, patch
 
 import pytest
+import pytz
 import requests
 
-from chineurs import facebook_group
+from chineurs import facebook_group, timestamp
 
 
 @pytest.fixture
@@ -60,7 +62,7 @@ def test_get_youtube_links(requests_get, monkeypatch):
     '''Tests that we get YouTube links from the Facebook API'''
     monkeypatch.setattr('requests.get', requests_get)
     links = facebook_group.get_youtube_links(
-        'group_id', 'access_token', '0001-01-01T00:00:00+0000')
+        'group_id', 'access_token', timestamp.DEFAULT_DATETIME)
 
     requests_get.assert_has_calls([
         call(
@@ -86,7 +88,7 @@ def test_get_youtube_links_expired_token(requests_get, monkeypatch):
     requests_get.side_effect = raise_expired
     with pytest.raises(facebook_group.ExpiredFacebookToken):
         facebook_group.get_youtube_links(
-            'group_id', 'access_token', '0001-01-01T00:00:00+0000')
+            'group_id', 'access_token', timestamp.DEFAULT_DATETIME)
 
 
 # pylint: disable=W0621
@@ -95,10 +97,18 @@ def test_get_youtube_links_filter_timestamp(requests_get, monkeypatch):
        old ones'''
     monkeypatch.setattr('requests.get', requests_get)
     links = facebook_group.get_youtube_links(
-        'group_id', 'access_token', '2015-01-01T00:00:00+0000')
+        'group_id', 'access_token', datetime(2015, 1, 1, 0, 0, 0, 0, pytz.utc))
 
     requests_get.assert_called_once_with(
         'https://graph.facebook.com/v2.8/group_id/feed?'
         'access_token=access_token&fields=id,message,link,updated_time&'
         'limit=1000')
     assert list(links) == ['bar']
+
+
+@patch('chineurs.facebook_group.requests.get', autospec=True)
+def test_get_facebook_id(requests_get):
+    '''Test get_facebook_id'''
+    requests_get.return_value.json.return_value = {'id': 'myid'}
+
+    assert facebook_group.get_facebook_id('token') == 'myid'

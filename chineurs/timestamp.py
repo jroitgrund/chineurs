@@ -3,27 +3,30 @@ from datetime import datetime
 
 import pytz
 
-from chineurs import facebook_group
-from chineurs.storage import Storage
+from chineurs import storage
 
-DEFAULT_TIMESTAMP = '0001-01-01T00:00:00+0000'
+DEFAULT_DATETIME = datetime(1, 1, 1, 0, 0, 0, 0, pytz.utc)
 
 
 class TimestampHandler:
     '''Handles timestamping for a group by remembering the date at which
        the last timestamp was read'''
 
-    def __init__(self, uuid, group_id):
-        self.storage = Storage(uuid)
-        self.key = 'timestamp-{}'.format(group_id)
-        self.last_read = None
+    def __init__(self, playlist_id, group_id):
+        self.playlist_id = playlist_id
+        self.group_id = group_id
 
     def read(self):
         '''Reads the latest timestamp and stores the current datetime'''
-        self.last_read = datetime.now(pytz.utc)
-        return self.storage.get(self.key) or DEFAULT_TIMESTAMP
+
+        self.last_read = datetime.now(pytz.utc)  # pylint:disable=W0201
+        # pylint:disable=E1120
+        last_playlist_insert = storage.get_last_playlist_insert(
+            self.playlist_id, self.group_id)
+        # pylint:enable=E1120
+        return last_playlist_insert or DEFAULT_DATETIME
 
     def write(self):
         '''Writes the last read datetime'''
-        self.storage.set(self.key, self.last_read.strftime(
-            facebook_group.FACEBOOK_TIMESTAMP_FORMAT))
+        storage.set_last_playlist_insert(  # pylint:disable=E1120
+            self.playlist_id, self.group_id, self.last_read)

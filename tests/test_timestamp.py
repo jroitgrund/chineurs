@@ -1,45 +1,26 @@
 '''Tests for timestamp module'''
-from unittest.mock import Mock, patch
+from datetime import datetime
+from unittest.mock import patch
 
 from chineurs import timestamp
 
 
 @patch('chineurs.timestamp.datetime')
-@patch('chineurs.timestamp.Storage', autospec=True)
+@patch('chineurs.timestamp.storage', spec=True)
 # pylint: disable=R0201
 def test_read_write(mock_storage, mock_datetime):
     '''Reads the timestamp from the file and writes the date at
        time of reading'''
-    current_time = Mock(['strftime'])
-    mock_datetime.now.return_value = current_time
-    current_time.strftime.return_value = 'new_timestamp'
-    mock_storage_instance = Mock()
-    mock_storage.return_value = mock_storage_instance
-    mock_storage_instance.get.return_value = 'timestamp'
+    now = datetime.now()
+    now2 = datetime.now()
+    mock_datetime.now.return_value = now2
+    mock_storage.get_last_playlist_insert.return_value = now
 
-    timestamp_handler = timestamp.TimestampHandler('uuid', 'group')
+    timestamp_handler = timestamp.TimestampHandler('playlist', 'group')
 
-    mock_storage.assert_called_once_with('uuid')
-    assert timestamp_handler.read() is 'timestamp'
-    mock_storage_instance.get.assert_called_once_with('timestamp-group')
+    assert timestamp_handler.read() is now
 
     timestamp_handler.write()
 
-    mock_storage_instance.set.assert_called_once_with(
-        'timestamp-group', 'new_timestamp')
-
-
-@patch('chineurs.timestamp.datetime')
-@patch('chineurs.timestamp.Storage', autospec=True)
-# pylint:disable=unused-argument,no-self-use
-def test_read_no_existing(mock_storage, mock_datetime):
-    '''Returns default timestamp when no file exists yet'''
-    mock_storage_instance = Mock()
-    mock_storage.return_value = mock_storage_instance
-    mock_storage_instance.get.return_value = None
-
-    timestamp_handler = timestamp.TimestampHandler('uuid', 'group')
-
-    mock_storage.assert_called_once_with('uuid')
-    assert timestamp_handler.read() is timestamp.DEFAULT_TIMESTAMP
-    mock_storage_instance.get.assert_called_once_with('timestamp-group')
+    mock_storage.set_last_playlist_insert.assert_called_once_with(
+        'playlist', 'group', now2)
