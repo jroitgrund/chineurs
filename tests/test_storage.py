@@ -6,7 +6,7 @@ import psycopg2
 import pytz
 from yoyo import read_migrations, get_backend
 
-from chineurs import storage
+from chineurs import settings, storage
 
 
 # pylint:disable=W0201,E1120
@@ -34,7 +34,9 @@ class TestStorage:
     @classmethod
     def setup_class(cls):
         '''Set up schema and mocks'''
-        backend = get_backend('postgres://chinema@/test')
+        url = (settings.POSTGRES_TESTING if settings.POSTGRES_TESTING else
+               'postgres://ubuntu:@127.0.0.1:5432/circle_test')
+        backend = get_backend(url)
         migrations = read_migrations('migrations')
         backend.apply_migrations(backend.to_apply(migrations))
         cls.commit_patch = patch('chineurs.storage.commit', do_nothing)
