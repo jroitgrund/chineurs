@@ -13,5 +13,10 @@ CELERY_APP.conf.update(
 @CELERY_APP.task
 def insert_videos(uuid, headers, playlist_id, video_ids):
     '''Inserts videos synchronously and writes to storage when done'''
-    youtube_playlist.insert_videos(headers, playlist_id, video_ids)
-    storage.save_job_progress(uuid, 100)  # pylint:disable=E1120
+    percent = 0
+    for i, video_id in enumerate(video_ids):
+        youtube_playlist.insert_video(headers, playlist_id, video_id)
+        new_percent = 100 * (i + 1) / len(video_ids)
+        if new_percent > percent:
+            percent = new_percent
+            storage.save_job_progress(uuid, percent)  # pylint:disable=E1120
