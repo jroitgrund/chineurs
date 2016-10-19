@@ -5,6 +5,8 @@ from itertools import chain
 import re
 import requests
 
+from chineurs import storage
+
 FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 VIDEO_ID_REGEX = re.compile(r'/watch\?v=([^&#\s]*)')
 
@@ -21,6 +23,34 @@ def get_facebook_id(access_token):
     return requests.get(
         'https://graph.facebook.com/v2.8/me?access_token={}'.format(
             access_token)).json()['id']
+
+
+def save_groups(user_id):
+    '''Return list of matching Facebook groups'''
+    # pylint:disable=E1120
+    uri = ('https://graph.facebook.com/v2.8/me/groups?'
+           'limit=1000&access_token={}'.format(
+               storage.get_user_by_id(user_id)['fb_access_token']))
+    groups = []
+    while uri:
+        try:
+            response = requests.get(uri)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise ExpiredFacebookToken()
+        json = response.json()
+        groups.extend(
+            {key: group[key] for key in ['id', 'name']}
+            for group in json['data'])
+        uri = json.get('paging', {}).get('next', None)
+    storage.save_facebook_groups(user_id, groups)
+
+
+def search_for_group(user_id, query):
+    '''Text search for groups'''
+    # pylint:disable=E1120
+    return [group for group in storage.get_facebook_groups(user_id)
+            if query.lower() in group['name'].lower()]
 
 
 def get_youtube_links(
@@ -42,9 +72,8 @@ def get_youtube_links(
             post for post in posts_response['data'] if
             get_datetime(post['updated_time']) > earliest_datetime]
         posts.extend(new_posts)
-        if 'paging' in posts_response and (
-                len(new_posts) == len(posts_response['data'])):
-            uri = posts_response['paging']['next']
+        if len(new_posts) == len(posts_response['data']):
+            uri = posts_response.get('paging', {}).get('next', None)
         else:
             uri = None
     video_ids = chain.from_iterable(

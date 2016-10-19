@@ -1,5 +1,6 @@
 '''SQL abstraction'''
-from functools import wraps
+from functools import partial, wraps
+import itertools
 import pickle
 
 import psycopg2
@@ -140,6 +141,27 @@ def save_job_progress(cursor, job_id, progress):
     cursor.execute(
         'UPDATE jobs SET progress=%s '
         'WHERE id=%s', (progress, job_id))
+
+
+@transactional
+def save_facebook_groups(cursor, user_id, groups):
+    '''Saves a user's Facebook groups'''
+    cursor.execute('DELETE FROM facebook_groups WHERE user_id=%s', (user_id,))
+    cursor.execute(
+        'INSERT INTO facebook_groups(user_id, group_id, group_name) '
+        'VALUES {}'.format(', '.join(['(%s, %s, %s)'] * len(groups))),
+        list(itertools.chain.from_iterable(
+            [user_id, group['id'], group['name']] for group in groups)))
+
+
+@transactional
+def get_facebook_groups(cursor, user_id):
+    '''Returns a user's Facebook groups'''
+    cursor.execute(
+        'SELECT group_name, group_id FROM facebook_groups '
+        'WHERE user_id=%s', (user_id,))
+    return list(map(
+        partial(row_to_dict, ['name', 'id']), cursor.fetchall()))
 
 
 def row_to_dict(column_names, row):

@@ -48,6 +48,7 @@ def logout():
 @user_id_required
 def home():
     '''Home page'''
+    facebook_group.save_groups(session['user_id'])
     return render_template('index.html', update_url=url_for('update'))
 
 
@@ -88,6 +89,12 @@ def done(task_uuid):
     # pylint:enable=E1120
 
 
+@APP.route('/groups/<query>')
+def groups(query):
+    '''Returns Facebook groups matching the query'''
+    return jsonify(facebook_group.search_for_group(session['user_id'], query))
+
+
 def full_url(route):
     '''Returns an absolute URL using the host in the request'''
     parts = urllib.parse.urlparse(request.url)
@@ -95,3 +102,8 @@ def full_url(route):
     netloc = parts[1]
     return urllib.parse.urlunparse(
         [scheme, netloc, url_for(route), None, None, None])
+
+
+if APP.debug:
+    from werkzeug.contrib.profiler import ProfilerMiddleware
+    APP = ProfilerMiddleware(APP, open('profile', 'w'))
