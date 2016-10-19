@@ -34,8 +34,10 @@ class TestStorage:
     @classmethod
     def setup_class(cls):
         '''Set up schema and mocks'''
-        url = (settings.POSTGRES_TESTING if settings.POSTGRES_TESTING else
-               'postgres://ubuntu:@127.0.0.1:5432/circle_test')
+        url = 'postgres://{}@{}:5432/{}'.format(
+            settings.TEST_POSTGRES_USER or 'ubuntu',
+            settings.TEST_POSTGRES_HOST or '127.0.0.1',
+            settings.TEST_POSTGRES_DB or 'circle_test')
         backend = get_backend(url)
         migrations = read_migrations('migrations')
         backend.apply_migrations(backend.to_apply(migrations))
@@ -52,11 +54,15 @@ class TestStorage:
 
     def setup_method(self, method):
         '''Set up and patch connection'''
-        if settings.POSTGRES_TESTING:
-            self.connection = psycopg2.connect('dbname=test user=chinema')
+        if settings.TEST_POSTGRES_HOST == '':
+            host = ''
         else:
-            self.connection = psycopg2.connect(
-                'dbname=circle_test user=ubuntu host=127.0.0.1')
+            host = ' host={}'.format(
+                settings.TEST_POSTGRES_HOST or '127.0.0.1')
+        self.connection = psycopg2.connect('dbname={} user={}{}'.format(
+            settings.TEST_POSTGRES_DB or 'circle_test',
+            settings.TEST_POSTGRES_USER or 'ubuntu',
+            host))
         self.get_db_patch = patch(
             'chineurs.storage.get_db', Mock(return_value=self.connection))
         self.get_db_patch.start()
