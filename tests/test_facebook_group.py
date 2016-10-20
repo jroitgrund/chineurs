@@ -22,13 +22,13 @@ def requests_get():
                 'updated_time': '2016-01-01T00:00:00+0000'
             },
             {
+                'message': 'no link here :(',
+                'updated_time': '2016-01-01T00:00:00+0000'
+            },
+            {
                 'message': '',
                 'link': 'youtube.com/watch?v=baz',
                 'updated_time': '2013-01-01T00:00:00+0000'
-            },
-            {
-                'message': 'no link here :(',
-                'updated_time': '2016-01-01T00:00:00+0000'
             }
         ],
         'paging': {
@@ -114,10 +114,9 @@ def test_get_facebook_id(requests_get):
     assert facebook_group.get_facebook_id('token') == 'myid'
 
 
-@patch('chineurs.facebook_group.storage', spec=True)
 @patch('chineurs.facebook_group.requests.get', autospec=True)
-def test_save_groups(requests_get, storage):
-    '''Test save groups'''
+def test_get_groups(requests_get):
+    '''Test get groups'''
     groups = [
         {'name': 'name1', 'id': 'id1'},
         {'name': 'name2', 'id': 'id2'},
@@ -125,26 +124,9 @@ def test_save_groups(requests_get, storage):
     requests_get.return_value.json.return_value = {
         'data': groups
     }
-    storage.get_user_by_id.return_value = {'fb_access_token': 'access_token'}
 
-    facebook_group.save_groups('user_id')
+    assert facebook_group.get_groups('access_token') == groups
 
     requests_get.assert_called_once_with(
         'https://graph.facebook.com/v2.8/me/groups?'
         'limit=1000&access_token=access_token')
-    storage.save_facebook_groups.assert_called_once_with('user_id', groups)
-
-
-@patch('chineurs.facebook_group.storage', spec=True)
-def test_search_for_group(storage):
-    '''Test search for group'''
-    groups = [
-        {'name': 'name1', 'id': 'id1'},
-        {'name': 'name2', 'id': 'id2'},
-    ]
-    storage.get_facebook_groups.return_value = groups + [
-        {'name': 'baz', 'id': 'bar'}]
-
-    assert facebook_group.search_for_group('user_id', 'name') == groups
-
-    storage.get_facebook_groups.assert_called_once_with('user_id')

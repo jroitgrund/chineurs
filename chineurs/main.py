@@ -8,15 +8,17 @@ from chineurs import (
     authentication,
     facebook_group,
     storage,
-    updates)
+    updates,
+    youtube_playlist)
 from chineurs.app import APP
 
 
 @APP.errorhandler(facebook_group.ExpiredFacebookToken)
-def handle_expired_facebook_token(error):  # pylint:disable=unused-argument
-    '''Handles expired facebook tokens'''
+@APP.errorhandler(youtube_playlist.ExpiredGoogleCredentials)
+def handle_expired_credentials(error):  # pylint:disable=unused-argument
+    '''Handles expired credentials'''
     APP.logger.info(
-        'Facebook token expired, redirecting from {}'.format(request.url))
+        'Auth expired, redirecting from {}'.format(request.url))
     return redirect(authentication.get_facebook_authentication_uri(
         full_url('facebook')))
 
@@ -48,7 +50,6 @@ def logout():
 @user_id_required
 def home():
     '''Home page'''
-    facebook_group.save_groups(session['user_id'])
     return render_template('index.html', update_url=url_for('update'))
 
 
@@ -89,10 +90,18 @@ def done(task_uuid):
     # pylint:enable=E1120
 
 
-@APP.route('/groups/<query>')
-def groups(query):
-    '''Returns Facebook groups matching the query'''
-    return jsonify(facebook_group.search_for_group(session['user_id'], query))
+@APP.route('/groups/')
+def groups():
+    '''Returns all facebook groups'''
+    user = storage.get_user_by_id(session['user_id'])  # pylint:disable=E1120
+    headers = {}
+    user['google_credentials'].apply(headers)
+    return jsonify({
+        'facebook_groups': facebook_group.get_groups(
+            user['fb_access_token']),
+        'youtube_playlists': youtube_playlist.get_playlists(
+            headers)
+        })
 
 
 def full_url(route):
@@ -104,6 +113,6 @@ def full_url(route):
         [scheme, netloc, url_for(route), None, None, None])
 
 
-if APP.debug:
-    from werkzeug.contrib.profiler import ProfilerMiddleware
-    APP = ProfilerMiddleware(APP, open('profile', 'w'))
+# if APP.debug:
+#     from werkzeug.contrib.profiler import ProfilerMiddleware
+#     APP = ProfilerMiddleware(APP, open('profile', 'w'))

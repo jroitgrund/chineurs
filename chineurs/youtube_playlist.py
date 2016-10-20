@@ -1,5 +1,15 @@
 '''Functions to interact with YouTube playlists'''
+import itertools
 import requests
+
+from chineurs import pagination
+
+
+class ExpiredGoogleCredentials(Exception):
+    '''Raised when the google token is expired'''
+
+    def __init__(self):
+        Exception.__init__(self)
 
 
 def insert_video(headers, playlist_id, video_id):
@@ -18,3 +28,25 @@ def insert_video(headers, playlist_id, video_id):
             }
         })
     return response
+
+
+def get_playlists(headers):
+    '''Gets all playlists'''
+    url = (
+        'https://www.googleapis.com/youtube/v3/playlists?'
+        'part=snippet&mine=true')
+
+    try:
+        pages = list(pagination.get_paginated_resource(
+            'https://www.googleapis.com/youtube/v3/playlists?'
+            'part=snippet&mine=true',
+            lambda page: (
+                'nextPageToken' in page and
+                '{}&pageToken={}'.format(url, page['nextPageToken'])),
+            headers=headers))
+    except requests.exceptions.HTTPError:
+        raise ExpiredGoogleCredentials()
+    return [
+        {'id': playlist['id'], 'name': playlist['snippet']['title']}
+        for playlist in
+        itertools.chain.from_iterable(page['items'] for page in pages)]

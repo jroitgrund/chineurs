@@ -53,13 +53,11 @@ def get_google_authentication_uri(redirect_uri):
 
 def save_google_credentials(user_id, code, redirect_uri):
     '''Save google credentials to disk if they don't exist already'''
-    user = storage.get_user_by_id(user_id)
-    if not user['google_credentials']:
-        storage.set_user_google_credentials(user_id, OAuth2WebServerFlow(
-            GOOGLE_APP_ID,
-            settings.GOOGLE_SECRET,
-            scope=[
-                'https://www.googleapis.com/auth/youtubepartner',
-                'https://www.googleapis.com/auth/youtube.force-ssl',
-                'https://www.googleapis.com/auth/youtube'],
-            redirect_uri=redirect_uri).step2_exchange(code))
+    storage.set_user_google_credentials(user_id, OAuth2WebServerFlow(
+        GOOGLE_APP_ID,
+        settings.GOOGLE_SECRET,
+        scope=[
+            'https://www.googleapis.com/auth/youtubepartner',
+            'https://www.googleapis.com/auth/youtube.force-ssl',
+            'https://www.googleapis.com/auth/youtube'],
+        redirect_uri=redirect_uri).step2_exchange(code))

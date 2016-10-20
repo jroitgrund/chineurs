@@ -22,17 +22,6 @@ def test_save_facebook_access_token(mock_requests_get, mock_storage):
 
 
 @patch('chineurs.authentication.storage', spec=True)
-def test_save_google_credentials_already_have(  # pylint:disable=invalid-name
-        mock_storage):
-    '''Tests that we read the token from file storage'''
-    mock_storage.get_user_by_id.return_value = {'google_credentials': 'foo'}
-
-    authentication.save_google_credentials('user_id', 'code', 'redirect_uri')
-
-    mock_storage.set_user_google_credentials.assert_has_calls([])
-
-
-@patch('chineurs.authentication.storage', spec=True)
 @patch('chineurs.authentication.OAuth2WebServerFlow', autospec=True)
 def test_save_google_credentials_get(  # pylint:disable=invalid-name
         mock_flow, mock_storage):

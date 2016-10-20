@@ -1,5 +1,6 @@
 '''Tests for the flask controllers'''
-from unittest.mock import patch
+import json
+from unittest.mock import Mock, patch
 
 from flask import session
 
@@ -33,16 +34,14 @@ def test_logout():
 
 
 @patch('chineurs.main.authentication', autospec=True)
-@patch('chineurs.main.facebook_group', autospec=True)
 # pylint:disable=unused-argument
-def test_home_with_session(facebook_group, authentication):
+def test_home_with_session(authentication):
     '''Home is served correctly with session cookie'''
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['user_id'] = 'user_id'
         response = test_client.get('/')
         assert 'Playlist' in response.data.decode('utf-8')
-    facebook_group.save_groups.assert_called_once_with('user_id')
 # pylint:enable=unused-argument
 
 
@@ -111,18 +110,38 @@ def test_done(storage):
     storage.get_job_progress.return_value = 'progress'
     with main.APP.test_client() as test_client:
         response = test_client.get('/done/foo')
-        assert '"progress": "progress"' in response.data.decode('utf-8')
+        assert json.loads(response.data.decode('utf-8')) == {
+            'progress': 'progress'}
     storage.get_job_progress.assert_called_once_with('foo')
 
 
+@patch('chineurs.main.storage', spec=True)
 @patch('chineurs.main.facebook_group', autospec=True)
-def test_groups(facebook_group):
+@patch('chineurs.main.youtube_playlist', autospec=True)
+def test_groups(youtube_playlist, facebook_group, storage):
     '''Test search groups endpoint'''
-    facebook_group.search_for_group.return_value = {'foo': 'bar'}
+    def apply(headers):
+        '''Mock credentials.apply'''
+        headers['auth'] = 'token'
+    credentials = Mock()
+    credentials.apply.side_effect = apply
+    storage.get_user_by_id.return_value = {
+        'fb_access_token': 'f',
+        'google_credentials': credentials
+    }
+    facebook_group.get_groups.return_value = {'foo': 'bar'}
+    youtube_playlist.get_playlists.return_value = {'baz': 'bam'}
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['user_id'] = 'user_id'
-        response = test_client.get('/groups/bar')
-        assert response.data.decode('utf-8') == '{\n  "foo": "bar"\n}\n'
-    facebook_group.search_for_group.assert_called_once_with(
-        'user_id', 'bar')
+        response = test_client.get('/groups/')
+        assert json.loads(response.data.decode('utf-8')) == {
+            'facebook_groups': {
+                'foo': 'bar'
+            },
+            'youtube_playlists': {
+                'baz': 'bam'
+            }
+        }
+    youtube_playlist.get_playlists.assert_called_once_with({'auth': 'token'})
+    facebook_group.get_groups.assert_called_once_with('f')

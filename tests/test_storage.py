@@ -119,26 +119,3 @@ class TestStorage:
             assert storage.get_job_progress(job_id) == 100
             cursor.execute('SELECT COUNT(*) FROM jobs')
             assert cursor.fetchone()[0] == 0
-
-    def test_facebook_groups(self):
-        '''Tests facebook group methods'''
-        user_id = storage.get_user_id('id', 'token')
-        storage.save_facebook_groups(
-            user_id, [
-                {
-                    'name': 'name1',
-                    'id': 'id1'
-                },
-                {
-                    'name': 'name2',
-                    'id': 'id2'
-                }])
-        assert storage.get_facebook_groups(user_id) == [
-            {
-                'name': 'name1',
-                'id': 'id1'
-            },
-            {
-                'name': 'name2',
-                'id': 'id2'
-            }]
