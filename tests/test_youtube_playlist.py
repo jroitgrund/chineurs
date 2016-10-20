@@ -17,6 +17,7 @@ def test_insert_videos(requests):
         json={
             'snippet': {
                 'playlistId': 'playlist',
+                'position': 0,
                 'resourceId': {
                     'kind': 'youtube#video',
                     'videoId': 'vid'
