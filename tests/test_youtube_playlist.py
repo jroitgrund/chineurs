@@ -24,3 +24,35 @@ def test_insert_videos(requests):
                 }
             }
         })
+
+
+@patch('chineurs.youtube_playlist.requests.get', autospec=True)
+def test_get_playlists(requests_get):
+    '''Get playlists from YouTube api'''
+    requests_get.return_value.json.return_value = {
+        'items': [
+            {
+                'id': 'id1',
+                'snippet': {
+                    'title': 'name1'
+                }
+            },
+            {
+                'id': 'id2',
+                'snippet': {
+                    'title': 'name2'
+                }
+            }
+        ]
+    }
+
+    assert youtube_playlist.get_playlists({}) == [
+        {
+            'id': 'id1',
+            'name': 'name1'
+        },
+        {
+            'id': 'id2',
+            'name': 'name2'
+        }
+    ]

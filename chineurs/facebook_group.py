@@ -5,6 +5,8 @@ from itertools import chain
 import re
 import requests
 
+from chineurs import pagination
+
 FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 VIDEO_ID_REGEX = re.compile(r'/watch\?v=([^&#\s]*)')
 
@@ -23,35 +25,47 @@ def get_facebook_id(access_token):
             access_token)).json()['id']
 
 
+def get_pages(uri, get_keep_fetching=lambda page: True):
+    '''Return all pages for this request'''
+    def get_next_page_url(json):
+        '''Returns the next page URL'''
+        return json.get('paging', {}).get('next', None)
+    try:
+        return list(pagination.get_paginated_resource(
+            uri, get_next_page_url, get_keep_fetching))
+    except requests.exceptions.HTTPError:
+        raise ExpiredFacebookToken
+
+
+def get_groups(access_token):
+    '''Return list of matching Facebook groups'''
+    pages = get_pages(
+        'https://graph.facebook.com/v2.8/me/groups?'
+        'limit=1000&access_token={}'.format(access_token))
+    return [{key: group[key] for key in ['id', 'name']}
+            for group in
+            chain.from_iterable(page['data'] for page in pages)]
+
+
 def get_youtube_links(
         group_id, access_token, earliest_datetime):
     '''Returns a list of all YouTube links in a group's feed'''
-    uri = ('https://graph.facebook.com/v2.8/%s/feed?access_token=%s&'
-           'fields=id,message,link,updated_time&'
-           'limit=1000' % (group_id, access_token))
-    posts = []
-    while uri:
-        try:
-            response = requests.get(uri)
-            response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            raise ExpiredFacebookToken()
-        posts_response = response.json()
-        new_posts = posts_response['data']
-        new_posts = [
-            post for post in posts_response['data'] if
-            get_datetime(post['updated_time']) > earliest_datetime]
-        posts.extend(new_posts)
-        if 'paging' in posts_response and (
-                len(new_posts) == len(posts_response['data'])):
-            uri = posts_response['paging']['next']
-        else:
-            uri = None
+    def valid_post(post):
+        '''Checks if a post is too early'''
+        return get_datetime(post['updated_time']) > earliest_datetime
+    pages = get_pages(
+        'https://graph.facebook.com/v2.8/%s/feed?access_token=%s&'
+        'fields=id,message,link,updated_time&'
+        'limit=1000' % (group_id, access_token),
+        lambda page: (
+            len(page['data']) > 0 and
+            valid_post(page['data'][-1])))
+    posts = chain.from_iterable(page['data'] for page in pages)
     video_ids = chain.from_iterable(
         find_youtube_ids(
             '{} {}'.format(
                 post.get('message', ''), post.get('link', '')))
-        for post in posts)
+        for post in posts if valid_post(post))
     return reversed(OrderedDict.fromkeys(video_ids).keys())
 
 
