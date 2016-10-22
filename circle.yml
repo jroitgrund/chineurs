@@ -1,6 +1,11 @@
 machine:
   python:
     version: 3.5.2
+dependencies:
+  override:
+    - npm install:
+      pwd:
+        chineurs/frontend
 test:
   override:
     - make lint
