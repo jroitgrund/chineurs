@@ -5,7 +5,6 @@ var autoprefixer = require('autoprefixer');
 var AssetsPlugin = require('assets-webpack-plugin');
 var DotenvPlugin = require('webpack-dotenv-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 function extractForProduction(loaders) {
   return ExtractTextPlugin.extract('style', loaders.substr(loaders.indexOf('!')));

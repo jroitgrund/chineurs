@@ -6,3 +6,4 @@ test:
 
 lint:
 	pylint --ignored-modules=chineurs.frontend $(shell find chineurs tests -path chineurs/frontend -prune -o -name "*.py") --disable=locally-disabled --disable=locally-enabled
+	cd chineurs/frontend;npm run lint:js

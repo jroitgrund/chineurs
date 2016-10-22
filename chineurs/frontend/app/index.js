@@ -1,7 +1,5 @@
 import './css/style';
 
-// require("babel/polyfill");
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Select from 'react-select';
@@ -68,7 +66,9 @@ class RootComponent extends React.Component {
           </div>
           <button
             className="btn btn-default"
-            type="submit">Go!</button>
+            type="submit">
+            Go!
+          </button>
         </form>
       </div>
     );

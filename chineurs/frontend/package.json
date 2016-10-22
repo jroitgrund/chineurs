@@ -4,7 +4,7 @@
   "description": "Upload Facebook group links to YouTube playlists.",
   "main": "app/index.js",
   "scripts": {
-    "lint:js": "eslint ./app ./conf ./build-gh-pages.js",
+    "lint:js": "eslint ./app ./conf",
     "karma": "cross-env NODE_ENV=test karma start",
     "test": "npm run karma conf/karma.conf.js -- --single-run",
     "test:watch": "npm run karma conf/karma.conf.js",
