@@ -5,17 +5,10 @@ from itertools import chain
 import re
 import requests
 
-from chineurs import pagination
+from chineurs import authentication, pagination
 
 FACEBOOK_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 VIDEO_ID_REGEX = re.compile(r'/watch\?v=([^&#\s]*)')
-
-
-class ExpiredFacebookToken(Exception):
-    '''Raised when the facebook token is expired'''
-
-    def __init__(self):
-        Exception.__init__(self)
 
 
 def get_facebook_id(access_token):
@@ -34,7 +27,7 @@ def get_pages(uri, get_keep_fetching=lambda page: True):
         return list(pagination.get_paginated_resource(
             uri, get_next_page_url, get_keep_fetching))
     except requests.exceptions.HTTPError:
-        raise ExpiredFacebookToken
+        raise authentication.AuthExpired
 
 
 def get_groups(access_token):
@@ -42,9 +35,11 @@ def get_groups(access_token):
     pages = get_pages(
         'https://graph.facebook.com/v2.8/me/groups?'
         'limit=1000&access_token={}'.format(access_token))
-    return [{key: group[key] for key in ['id', 'name']}
-            for group in
-            chain.from_iterable(page['data'] for page in pages)]
+    return sorted(
+        [{key: group[key] for key in ['id', 'name']}
+         for group in
+         chain.from_iterable(page['data'] for page in pages)],
+        key=lambda group: group['name'])
 
 
 def get_youtube_links(

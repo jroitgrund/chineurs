@@ -6,7 +6,7 @@ import pytest
 import pytz
 import requests
 
-from chineurs import facebook_group, timestamp
+from chineurs import authentication, facebook_group, timestamp
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ def test_get_youtube_links_expired_token(requests_get, monkeypatch):
         '''Raises expired'''
         raise requests.exceptions.HTTPError
     requests_get.side_effect = raise_expired
-    with pytest.raises(facebook_group.ExpiredFacebookToken):
+    with pytest.raises(authentication.AuthExpired):
         facebook_group.get_youtube_links(
             'group_id', 'access_token', timestamp.DEFAULT_DATETIME)
 

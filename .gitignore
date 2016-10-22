@@ -98,12 +98,11 @@ data/
 *.sublime-project
 *.sublime-workspace
 
-# Deploy
-deploy.sh
-run.sh
-run_celery.sh
-
 # Frontend
-frontend/node_modules
-frontend/coverage
-frontend/dist
+chineurs/frontend/node_modules
+chineurs/frontend/coverage
+chineurs/frontend/webpack-assets.json
+chineurs/static/*.js
+chineurs/static/*.css
+chineurs/frontend/yarn.lock
+chineurs/frontend/yarn-error.log
