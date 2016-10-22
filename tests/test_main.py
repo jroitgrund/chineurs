@@ -97,9 +97,12 @@ def test_update(updates, authentication):  # pylint:disable=unused-argument
             sess['user_id'] = 'user_id'
         response = test_client.post(
             '/update',
-            data=dict(group_id='group', playlist_id='playlist'))
+            data=json.dumps(dict(group_id='group', playlist_id='playlist')),
+            content_type='application/json')
     updates.update.assert_called_once_with('user_id', 'group', 'playlist')
-    assert response.data.decode('utf-8') == 'task_uuid'
+    assert json.loads(response.data.decode('utf-8')) == {
+        'task_uuid': 'task_uuid'
+    }
 
 
 @patch('chineurs.main.authentication', autospec=True)
@@ -116,7 +119,8 @@ def test_update_raises(updates, authentication):
             sess['user_id'] = 'user_id'
         response = test_client.post(
             '/update',
-            data=dict(group_id='group', playlist_id='playlist'))
+            data=json.dumps(dict(group_id='group', playlist_id='playlist')),
+            content_type='application/json')
         assert response.location == 'http://localhost/auth'
 
 

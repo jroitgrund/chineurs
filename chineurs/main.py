@@ -94,8 +94,8 @@ def update():
     '''Uploads all new videos to YouTube'''
     return jsonify({'task_uuid': updates.update(
         session['user_id'],
-        request.args.get('group_id'),
-        request.args.get('playlist_id'))})
+        request.get_json()['group_id'],
+        request.get_json()['playlist_id'])})
 
 
 @APP.route('/done/<task_uuid>')
