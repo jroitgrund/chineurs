@@ -9,4 +9,4 @@ deployment:
   develop:
     branch: develop
     commands:
-      - ssh jonathan@roitgrund.me '/home/jonathan/chineurs-dev/deploy.sh'
+      - ssh jonathan@roitgrund.me '/home/jonathan/chineurs-dev/pull_and_deploy.sh'
