@@ -1,8 +1,6 @@
 machine:
   node:
     version: 6.9.1
-  npm:
-    version: 3.10.8
   python:
     version: 3.5.2
 dependencies:
