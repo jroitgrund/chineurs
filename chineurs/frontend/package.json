@@ -17,7 +17,9 @@
   "author": "Jonathan Roitgrund <jonathan@roitgrund.me>",
   "license": "MIT",
   "dependencies": {
+    "react": "^0.14.1",
     "react": "^15.3.2",
+    "react-dom": "^0.14.1",
     "react-dom": "^15.3.2",
     "react-select": "0.9.1",
     "reqwest": "^2.0.5",
@@ -40,7 +42,7 @@
     "cross-env": "^1.0.7",
     "css-loader": "^0.23.1",
     "enzyme": "^2.2.0",
-    "eslint": "^2.8.0",
+    "eslint": "^3.0.0",
     "eslint-config-standard": "^5.1.0",
     "eslint-config-standard-jsx": "^3.2.0",
     "eslint-config-standard-react": "^2.2.0",
