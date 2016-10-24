@@ -6,12 +6,18 @@
         <title>le chinema</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.2.2/css/vendor/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.2.2/css/flat-ui.min.css">
+        {% for css in resources['css'] %}
+            <link rel="stylesheet" href="{{css}}">
+        {% endfor %}
     </head>
-    <body>
-      <form method="get" action=" {{ update_url }} ">
-        <label for="groupId">Group ID</label><input type="text" id="groupId" name="group_id">
-        <label for="playlistId">Playlist ID</label><input type="text" id="playlistId" name="playlist_id">
-        <input type="submit" value="Go!">
-      </form>
+    <body data-page="{{ data }}">
+        <div class="container">
+            <div id="app"></div>
+            {% for js in resources['js'] %}
+                <script src="{{js}}"></script>
+            {% endfor %}
+        </div>
     </body>
 </html>

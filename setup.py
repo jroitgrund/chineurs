@@ -24,7 +24,11 @@ CONFIG = {
         'yoyo-migrations'],
     'packages': ['chineurs'],
     'package_data': {
-        'chineurs': ['templates/*']
+        'chineurs': [
+            'templates/*',
+            'static/*',
+            'frontend/webpack-assets.json',
+        ]
     },
     'scripts': [],
     'name': 'chineurs'

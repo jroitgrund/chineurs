@@ -15,6 +15,13 @@ GOOGLE_APP_ID = (
 # pylint:disable=E1120
 
 
+class AuthExpired(Exception):
+    '''Raised when the facebook token is expired'''
+
+    def __init__(self):
+        Exception.__init__(self)
+
+
 def get_facebook_authentication_uri(redirect_uri):
     '''Gets the URI to redirect the user to for Facebook authentication'''
     return (

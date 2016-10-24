@@ -1,11 +1,11 @@
 '''Tests for the flask controllers'''
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from flask import session
 
 from chineurs import main
-from chineurs.facebook_group import ExpiredFacebookToken
+from chineurs.authentication import AuthExpired
 
 
 def setup_module(module):  # pylint: disable=W0613
@@ -33,15 +33,29 @@ def test_logout():
         assert response.location == 'http://localhost/'
 
 
-@patch('chineurs.main.authentication', autospec=True)
+@patch('chineurs.main.resources', autospec=True)
+@patch('chineurs.main.youtube_playlist', autospec=True)
+@patch('chineurs.main.facebook_group', autospec=True)
+@patch('chineurs.main.storage', spec=True)
 # pylint:disable=unused-argument
-def test_home_with_session(authentication):
+def test_home_with_session(
+        storage, facebook_group, youtube_playlist, resources):
     '''Home is served correctly with session cookie'''
+    resources.get_resources.return_value = {
+        'js': ['foo'],
+        'css': ['bam'],
+    }
+    facebook_group.get_groups.return_value = ['bar']
+    youtube_playlist.get_playlists.return_value = ['baz']
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['user_id'] = 'user_id'
         response = test_client.get('/')
-        assert 'Playlist' in response.data.decode('utf-8')
+        text = response.data.decode('utf-8')
+        assert 'bar' in text
+        assert 'baz' in text
+        assert 'src="foo"' in text
+        assert 'href="bam"' in text
 # pylint:enable=unused-argument
 
 
@@ -81,10 +95,14 @@ def test_update(updates, authentication):  # pylint:disable=unused-argument
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['user_id'] = 'user_id'
-        response = test_client.get(
-            '/update?group_id=group&playlist_id=playlist')
+        response = test_client.post(
+            '/update',
+            data=json.dumps(dict(group_id='group', playlist_id='playlist')),
+            content_type='application/json')
     updates.update.assert_called_once_with('user_id', 'group', 'playlist')
-    assert response.data.decode('utf-8') == 'task_uuid'
+    assert json.loads(response.data.decode('utf-8')) == {
+        'task_uuid': 'task_uuid'
+    }
 
 
 @patch('chineurs.main.authentication', autospec=True)
@@ -93,14 +111,16 @@ def test_update_raises(updates, authentication):
     '''If update raises an expired exception, main redirects'''
     def raise_expired(*args, **kwargs):  # pylint:disable=unused-argument
         '''Raises expired'''
-        raise ExpiredFacebookToken()
+        raise AuthExpired()
     updates.update.side_effect = raise_expired
     authentication.get_facebook_authentication_uri.return_value = 'auth'
     with main.APP.test_client() as test_client:
         with test_client.session_transaction() as sess:
             sess['user_id'] = 'user_id'
-        response = test_client.get(
-            '/update?group_id=group&playlist_id=playlist')
+        response = test_client.post(
+            '/update',
+            data=json.dumps(dict(group_id='group', playlist_id='playlist')),
+            content_type='application/json')
         assert response.location == 'http://localhost/auth'
 
 
@@ -113,35 +133,3 @@ def test_done(storage):
         assert json.loads(response.data.decode('utf-8')) == {
             'progress': 'progress'}
     storage.get_job_progress.assert_called_once_with('foo')
-
-
-@patch('chineurs.main.storage', spec=True)
-@patch('chineurs.main.facebook_group', autospec=True)
-@patch('chineurs.main.youtube_playlist', autospec=True)
-def test_groups(youtube_playlist, facebook_group, storage):
-    '''Test search groups endpoint'''
-    def apply(headers):
-        '''Mock credentials.apply'''
-        headers['auth'] = 'token'
-    credentials = Mock()
-    credentials.apply.side_effect = apply
-    storage.get_user_by_id.return_value = {
-        'fb_access_token': 'f',
-        'google_credentials': credentials
-    }
-    facebook_group.get_groups.return_value = {'foo': 'bar'}
-    youtube_playlist.get_playlists.return_value = {'baz': 'bam'}
-    with main.APP.test_client() as test_client:
-        with test_client.session_transaction() as sess:
-            sess['user_id'] = 'user_id'
-        response = test_client.get('/groups/')
-        assert json.loads(response.data.decode('utf-8')) == {
-            'facebook_groups': {
-                'foo': 'bar'
-            },
-            'youtube_playlists': {
-                'baz': 'bam'
-            }
-        }
-    youtube_playlist.get_playlists.assert_called_once_with({'auth': 'token'})
-    facebook_group.get_groups.assert_called_once_with('f')

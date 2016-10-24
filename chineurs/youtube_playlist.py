@@ -2,14 +2,7 @@
 import itertools
 import requests
 
-from chineurs import pagination
-
-
-class ExpiredGoogleCredentials(Exception):
-    '''Raised when the google token is expired'''
-
-    def __init__(self):
-        Exception.__init__(self)
+from chineurs import authentication, pagination
 
 
 def insert_video(headers, playlist_id, video_id):
@@ -45,8 +38,9 @@ def get_playlists(headers):
                 '{}&pageToken={}'.format(url, page['nextPageToken'])),
             headers=headers))
     except requests.exceptions.HTTPError:
-        raise ExpiredGoogleCredentials()
-    return [
-        {'id': playlist['id'], 'name': playlist['snippet']['title']}
-        for playlist in
-        itertools.chain.from_iterable(page['items'] for page in pages)]
+        raise authentication.AuthExpired()
+    return sorted(
+        [{'id': playlist['id'], 'name': playlist['snippet']['title']}
+         for playlist in
+         itertools.chain.from_iterable(page['items'] for page in pages)],
+        key=lambda playlist: playlist['name'])

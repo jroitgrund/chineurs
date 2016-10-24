@@ -1,5 +1,7 @@
 '''Entry point for chineurs server'''
+from concurrent.futures import ThreadPoolExecutor
 import functools
+import json
 import urllib
 
 from flask import jsonify, redirect, render_template, request, session, url_for
@@ -7,17 +9,17 @@ from flask import jsonify, redirect, render_template, request, session, url_for
 from chineurs import (
     authentication,
     facebook_group,
+    resources,
     storage,
     updates,
     youtube_playlist)
 from chineurs.app import APP
 
 
-@APP.errorhandler(facebook_group.ExpiredFacebookToken)
-@APP.errorhandler(youtube_playlist.ExpiredGoogleCredentials)
+@APP.errorhandler(authentication.AuthExpired)
 def handle_expired_credentials(error):  # pylint:disable=unused-argument
     '''Handles expired credentials'''
-    APP.logger.info(
+    APP.logger.exception(
         'Auth expired, redirecting from {}'.format(request.url))
     return redirect(authentication.get_facebook_authentication_uri(
         full_url('facebook')))
@@ -50,7 +52,21 @@ def logout():
 @user_id_required
 def home():
     '''Home page'''
-    return render_template('index.html', update_url=url_for('update'))
+    user = storage.get_user_by_id(session['user_id'])  # pylint:disable=E1120
+    headers = {}
+    user['google_credentials'].apply(headers)
+    executor = ThreadPoolExecutor(max_workers=2)
+    fb_groups = executor.submit(lambda: facebook_group.get_groups(
+        user['fb_access_token']))
+    playlists = executor.submit(lambda: youtube_playlist.get_playlists(
+        headers))
+    return render_template(
+        'index.html',
+        resources=resources.get_resources(),
+        data=json.dumps({
+            'update_url': url_for('update'),
+            'facebook_groups': fb_groups.result(),
+            'youtube_playlists': playlists.result()}))
 
 
 @APP.route('/facebook')
@@ -73,13 +89,13 @@ def google():
     return redirect(url_for('home'))
 
 
-@APP.route('/update')
+@APP.route('/update', methods=['POST'])
 def update():
     '''Uploads all new videos to YouTube'''
-    return '{}'.format(updates.update(
+    return jsonify({'task_uuid': updates.update(
         session['user_id'],
-        request.args.get('group_id'),
-        request.args.get('playlist_id')))
+        request.get_json()['group_id'],
+        request.get_json()['playlist_id'])})
 
 
 @APP.route('/done/<task_uuid>')
@@ -88,20 +104,6 @@ def done(task_uuid):
     # pylint:disable=E1120
     return jsonify(progress=storage.get_job_progress(task_uuid))
     # pylint:enable=E1120
-
-
-@APP.route('/groups/')
-def groups():
-    '''Returns all facebook groups'''
-    user = storage.get_user_by_id(session['user_id'])  # pylint:disable=E1120
-    headers = {}
-    user['google_credentials'].apply(headers)
-    return jsonify({
-        'facebook_groups': facebook_group.get_groups(
-            user['fb_access_token']),
-        'youtube_playlists': youtube_playlist.get_playlists(
-            headers)
-        })
 
 
 def full_url(route):

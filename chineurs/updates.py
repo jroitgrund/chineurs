@@ -9,9 +9,9 @@ from chineurs import (
 def update(user_id, group_id, playlist_id):
     '''Queries Facebook for new videos based on timestamp
        and updates YouTube'''
+    user = storage.get_user_by_id(user_id)  # pylint:disable=E1120
     timestamp_handler = timestamp.TimestampHandler(playlist_id, group_id)
     latest = timestamp_handler.read()
-    user = storage.get_user_by_id(user_id)  # pylint:disable=E1120
     ids = list(facebook_group.get_youtube_links(
         group_id, user['fb_access_token'], latest))
     timestamp_handler.write()

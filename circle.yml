@@ -1,6 +1,13 @@
 machine:
+  node:
+    version: 6.9.1
   python:
     version: 3.5.2
+dependencies:
+  override:
+    - npm install:
+        pwd:
+          chineurs/frontend
 test:
   override:
     - make lint
@@ -9,4 +16,4 @@ deployment:
   develop:
     branch: develop
     commands:
-      - ssh jonathan@roitgrund.me '/home/jonathan/chineurs-dev/deploy.sh'
+      - ssh jonathan@roitgrund.me '/home/jonathan/chineurs-dev/pull_and_deploy.sh'
