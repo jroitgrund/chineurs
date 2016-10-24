@@ -17,9 +17,7 @@
   "author": "Jonathan Roitgrund <jonathan@roitgrund.me>",
   "license": "MIT",
   "dependencies": {
-    "react": "^0.14.1",
     "react": "^15.3.2",
-    "react-dom": "^0.14.1",
     "react-dom": "^15.3.2",
     "react-select": "0.9.1",
     "reqwest": "^2.0.5",
