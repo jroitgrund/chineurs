@@ -101,7 +101,7 @@ def test_update(updates, authentication):  # pylint:disable=unused-argument
             content_type='application/json')
     updates.update.assert_called_once_with('user_id', 'group', 'playlist')
     assert json.loads(response.data.decode('utf-8')) == {
-        'task_uuid': 'task_uuid'
+        'done_url': '/done/task_uuid'
     }
 
 

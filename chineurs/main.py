@@ -92,10 +92,10 @@ def google():
 @APP.route('/update', methods=['POST'])
 def update():
     '''Uploads all new videos to YouTube'''
-    return jsonify({'task_uuid': updates.update(
+    return jsonify({'done_url': url_for('done', task_uuid=updates.update(
         session['user_id'],
         request.get_json()['group_id'],
-        request.get_json()['playlist_id'])})
+        request.get_json()['playlist_id']))})
 
 
 @APP.route('/done/<task_uuid>')
