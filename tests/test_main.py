@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 from flask import session
 
-from chineurs import authentication, main
+from chineurs import main
+from chineurs.authentication import AuthExpired
 
 
 def setup_module(module):  # pylint: disable=W0613
@@ -110,7 +111,7 @@ def test_update_raises(updates, authentication):
     '''If update raises an expired exception, main redirects'''
     def raise_expired(*args, **kwargs):  # pylint:disable=unused-argument
         '''Raises expired'''
-        raise authentication.AuthExpired()
+        raise AuthExpired()
     updates.update.side_effect = raise_expired
     authentication.get_facebook_authentication_uri.return_value = 'auth'
     with main.APP.test_client() as test_client:
