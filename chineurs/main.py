@@ -8,10 +8,10 @@ from flask import jsonify, redirect, render_template, request, session, url_for
 
 from chineurs import (
     authentication,
+    celery,
     facebook_group,
     resources,
     storage,
-    updates,
     youtube_playlist)
 from chineurs.app import APP
 
@@ -92,17 +92,20 @@ def google():
 @APP.route('/update', methods=['POST'])
 def update():
     '''Uploads all new videos to YouTube'''
-    return jsonify({'done_url': url_for('done', task_uuid=updates.update(
+    task_uuid = storage.new_job()  # pylint:disable=E1120
+    celery.update.delay(
         session['user_id'],
         request.get_json()['group_id'],
-        request.get_json()['playlist_id']))})
+        request.get_json()['playlist_id'],
+        task_uuid)
+    return jsonify({'done_url': url_for('done', task_uuid=task_uuid)})
 
 
 @APP.route('/done/<task_uuid>')
 def done(task_uuid):
     '''Checks if a given youtube upload request if done'''
     # pylint:disable=E1120
-    return jsonify(progress=storage.get_job_progress(task_uuid))
+    return jsonify(storage.get_job_progress(task_uuid))
     # pylint:enable=E1120
 
 

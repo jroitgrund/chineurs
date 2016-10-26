@@ -3,7 +3,7 @@ import './css/style';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import reqwest from 'reqwest';
-import Rx from 'Rxjs/Rx';
+import Rx from 'rxjs/Rx';
 import Select from 'react-select';
 import update from 'react-addons-update';
 
@@ -16,6 +16,16 @@ const asOptionList = (namedItems) => namedItems.map(item => ({
 
 const findValueLabel = (value, options) =>
   options.find(option => option['value'] === value)['label'];
+
+class StableSelect extends React.Component {
+  shouldComponentUpdate() {
+    return !this.refs.select.props.options;
+  }
+
+  render() {
+    return <Select ref="select" {...this.props} />;
+  }
+}
 
 class Form extends React.Component {
 
@@ -50,8 +60,7 @@ class Form extends React.Component {
       <form className="form-horizontal">
         <div className="form-group">
           <div className="col-sm-6">
-            <Select
-              name="group_id"
+            <StableSelect
               autoblur
               options={this.props.groups}
               placeholder="Search for group"
@@ -60,8 +69,7 @@ class Form extends React.Component {
             />
           </div>
           <div className="col-sm-6">
-            <Select
-              name="playlist_id"
+            <StableSelect
               autoblur
               options={this.props.playlists}
               placeholder="Search for playlist"
@@ -93,10 +101,11 @@ Form.propTypes = {
 
 const ProgressIndicator = props => (
   <div>
-    <h1>
-      {props.groupName} ➞ {props.playlistName}: {`${props.progress} %`}
-      {props.progress === 100 ? '✔' : ''}
-    </h1>
+    <h5>
+      {props.groupName} ➞ {props.playlistName}&nbsp;
+      {props.message ? `★ ${props.message}` : ''}&nbsp;
+      {props.progress === 100 ? '✔' : `${props.progress} %`}
+    </h5>
     {props.progress !== 100
       ? <hr style={{
         width: `${props.progress}%`,
@@ -112,6 +121,7 @@ ProgressIndicator.propTypes = {
   groupName: React.PropTypes.string.isRequired,
   playlistName: React.PropTypes.string.isRequired,
   progress: React.PropTypes.number.isRequired,
+  message: React.PropTypes.string.isRequired,
 };
 
 class RootComponent extends React.Component {
@@ -129,13 +139,11 @@ class RootComponent extends React.Component {
   componentWillMount() {
     const data = JSON.parse(
       document.getElementsByTagName('body')[0].dataset.page);
-    this.playlists = data['youtube_playlists'];
-    this.groups = data['facebook_groups'];
+    this.playlists = asOptionList(data['youtube_playlists']);
+    this.groups = asOptionList(data['facebook_groups']);
     this.updateUrl = data['update_url'];
     this.setState({
       jobs: [],
-      playlists: asOptionList(this.playlists),
-      groups: asOptionList(this.groups),
       submitEnabled: true,
     });
   }
@@ -147,7 +155,10 @@ class RootComponent extends React.Component {
         this.state.jobs,
         {
           $push: [{
-            progress: 0,
+            progress: {
+              facebookProgress: 0,
+              youtubeProgress: 0,
+            },
             groupName: group.name,
             playlistName: playlist.name,
           }],
@@ -172,9 +183,12 @@ class RootComponent extends React.Component {
     Rx.Observable
       .interval(1000)
       .switchMap(() => Rx.Observable.fromPromise(
-        reqwest({url: doneUrl}).then(data => Number(data['progress']))))
-      .takeWhile(progress => progress !== 100)
-      .concat(Rx.Observable.just(100))
+        reqwest({url: doneUrl}).then(data => ({
+          facebookProgress: Number(data['facebook_progress']),
+          youtubeProgress: Number(data['youtube_progress']),
+        }))))
+      .takeWhile(progress => progress['youtubeProgress'] !== 100)
+      .concat(Rx.Observable.of({ youtubeProgress: 100, facebookProgress: 100 }))
       .subscribe(
         progress => this.setState({
           jobs: update(
@@ -193,19 +207,30 @@ class RootComponent extends React.Component {
     return (
       <div>
         <Form
-          groups={this.state.groups}
-          playlists={this.state.playlists}
+          groups={this.groups}
+          playlists={this.playlists}
           submitEnabled={this.state.submitEnabled}
           onSubmit={this.onSubmit}
         />
-        {this.state.jobs.map((job, i) =>
-          <ProgressIndicator
+        {this.state.jobs.map((job, i) => {
+          let progress, message;
+          if (job.progress.facebookProgress === 100) {
+            progress = job.progress.youtubeProgress;
+            if (job.progress.youtubeProgress < 100) {
+              message = 'Uploading videos to YouTube...';
+            }
+          } else {
+            progress = job.progress.facebookProgress;
+            message = 'Getting videos from Facebook...';
+          }
+          return (<ProgressIndicator
             key={i}
             groupName={job.groupName}
             playlistName={job.playlistName}
-            progress={job.progress}
-          />)
-        }
+            progress={progress}
+            message={message}
+          />);
+        })}
       </div>
     );
   }

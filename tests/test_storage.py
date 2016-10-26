@@ -114,8 +114,14 @@ class TestStorage:
         '''Tests job methods'''
         with self.connection.cursor() as cursor:
             job_id = storage.new_job()
-            assert storage.get_job_progress(job_id) == 0
-            storage.save_job_progress(job_id, 100)
-            assert storage.get_job_progress(job_id) == 100
+            assert storage.get_job_progress(job_id) == {
+                'youtube_progress': 0,
+                'facebook_progress': 0,
+            }
+            storage.save_job_progress(job_id, 100, 'youtube')
+            assert storage.get_job_progress(job_id) == {
+                'youtube_progress': 100,
+                'facebook_progress': 0,
+            }
             cursor.execute('SELECT COUNT(*) FROM jobs')
             assert cursor.fetchone()[0] == 0
