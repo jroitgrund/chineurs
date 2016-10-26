@@ -21,6 +21,7 @@ CONFIG = {
         'python-dotenv',
         'pytz',
         'requests',
+        'tornado',
         'yoyo-migrations'],
     'packages': ['chineurs'],
     'package_data': {

@@ -1,17 +1,11 @@
 '''Tests for celery'''
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 from chineurs import celery
 
 
-@patch('chineurs.celery.storage', spec=True)
-@patch('chineurs.celery.youtube_playlist', autospec=True)
-def test_insert_videos(youtube_playlist, storage):
+@patch('chineurs.celery.updates', autospec=True)
+def test_insert_videos(updates):
     '''Inserts videos and updates progress'''
-    celery.insert_videos('uuid', {}, 'playlist', range(5))
-
-    youtube_playlist.insert_video.assert_has_calls(
-        call({}, 'playlist', i) for i in range(5))
-
-    storage.save_job_progress.assert_has_calls(
-        call('uuid', percent) for percent in [20, 40, 60, 80, 100])
+    celery.update(1, 'group', 'playlist', 'task_uuid')
+    updates.update.assert_called_once_with(1, 'group', 'playlist', 'task_uuid')

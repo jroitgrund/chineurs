@@ -115,9 +115,9 @@ def new_job(cursor):
     '''Adds info about a running job'''
     cursor.execute(
         'INSERT INTO '
-        'jobs(progress) '
-        'VALUES (%s) RETURNING id',
-        (0,))
+        'jobs(facebook_progress, youtube_progress) '
+        'VALUES (%s, %s) RETURNING id',
+        (0, 0))
     return cursor.fetchone()[0]
 
 
@@ -125,21 +125,23 @@ def new_job(cursor):
 def get_job_progress(cursor, job_id):
     '''Gets the progress of a running job'''
     cursor.execute(
-        'SELECT progress FROM jobs '
+        'SELECT facebook_progress, youtube_progress FROM jobs '
         'WHERE id=%s', (job_id,))
-    progress = cursor.fetchone()[0]
-    if progress == 100:
+    progress = row_to_dict(
+        ['facebook_progress', 'youtube_progress'],
+        cursor.fetchone())
+    if progress['youtube_progress'] == 100:
         cursor.execute(
             'DELETE FROM jobs WHERE id=%s', (job_id,))
     return progress
 
 
 @transactional
-def save_job_progress(cursor, job_id, progress):
+def save_job_progress(cursor, job_id, progress, progress_type):
     '''Saves the progress of a running job'''
     cursor.execute(
-        'UPDATE jobs SET progress=%s '
-        'WHERE id=%s', (progress, job_id))
+        'UPDATE jobs SET {}_progress=%s '
+        'WHERE id=%s'.format(progress_type), (progress, job_id))
 
 
 def row_to_dict(column_names, row):

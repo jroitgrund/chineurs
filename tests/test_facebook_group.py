@@ -1,5 +1,8 @@
 '''Tests for facebook_group'''
+import asyncio
+from collections import OrderedDict
 from datetime import datetime
+import json
 from unittest.mock import call, Mock, patch
 
 import pytest
@@ -19,16 +22,19 @@ def requests_get():
         'data': [
             {
                 'message': 'woo! youtube.com/watch?v=bar is sick',
-                'updated_time': '2016-01-01T00:00:00+0000'
+                'updated_time': '2016-01-01T00:00:00+0000',
+                'id': 1,
             },
             {
                 'message': 'no link here :(',
-                'updated_time': '2016-01-01T00:00:00+0000'
+                'updated_time': '2016-01-01T00:00:00+0000',
+                'id': 2,
             },
             {
                 'message': '',
                 'link': 'youtube.com/watch?v=baz',
-                'updated_time': '2013-01-01T00:00:00+0000'
+                'updated_time': '2013-01-01T00:00:00+0000',
+                'id': 3,
             }
         ],
         'paging': {
@@ -40,14 +46,17 @@ def requests_get():
             {
                 'message': 'woo! youtube.com/watch?v=bam is sick',
                 'link': 'youtube.com/watch?v=bak',
-                'updated_time': '2016-01-01T00:00:00+0000'
+                'updated_time': '2016-01-01T00:00:00+0000',
+                'id': 4,
             },
             {
-                'updated_time': '2016-01-01T00:00:00+0000'
+                'updated_time': '2016-01-01T00:00:00+0000',
+                'id': 5,
             },
             {
                 'message': 'no link here :(',
-                'updated_time': '2016-01-01T00:00:00+0000'
+                'updated_time': '2016-01-01T00:00:00+0000',
+                'id': 6,
             }
         ]
     }
@@ -70,11 +79,40 @@ def test_get_youtube_links(requests_get, monkeypatch):
             'access_token=access_token&fields=id,message,link,updated_time&'
             'limit=1000'),
         call('next')])
-    assert list(links) == [
-        'bak',
-        'bam',
-        'baz',
-        'bar']
+    assert links == OrderedDict([
+        (1, ['bar']),
+        (2, []),
+        (3, ['baz']),
+        (4, ['bam', 'bak']),
+        (5, []),
+        (6, []),
+    ])
+
+
+# pylint: disable=C0103
+@patch('chineurs.facebook_group.AsyncHTTPClient', autospec=True)
+def test_get_youtube_links_from_comments(http_client):
+    '''Tests that we asynchronously fetch links in a post's comments'''
+    # pylint:disable=W0613,C0111
+    async def async_get(url, raise_error=False):
+        response = Mock()
+        Mock.body = json.dumps({
+            'data': [
+                {'message': 'youtube.com/watch?v=baz'},
+                {'message': 'youtube.com/watch?v=bar'},
+            ]
+        }).encode('utf-8')
+        return response
+    http_client.return_value.fetch.side_effect = async_get
+    # pylint:enable=W0613,C0111
+
+    assert list(asyncio.get_event_loop().run_until_complete(
+        facebook_group.get_youtube_links_from_comments('post_id', 'f'))) == [
+            'baz', 'bar']
+
+    http_client.return_value.fetch.assert_called_once_with(
+        'https://graph.facebook.com/v2.8/post_id/comments?'
+        'filter=stream&access_token=f', raise_error=False)
 
 
 # pylint: disable=invalid-name
@@ -103,7 +141,10 @@ def test_get_youtube_links_filter_timestamp(requests_get, monkeypatch):
         'https://graph.facebook.com/v2.8/group_id/feed?'
         'access_token=access_token&fields=id,message,link,updated_time&'
         'limit=1000')
-    assert list(links) == ['bar']
+    assert links == OrderedDict([
+        (1, ['bar']),
+        (2, []),
+    ])
 
 
 @patch('chineurs.facebook_group.requests.get', autospec=True)
