@@ -58,12 +58,13 @@ def test_home_with_session(
 # pylint:enable=unused-argument
 
 
+@patch('chineurs.main.resources', autospec=True)
 @patch('chineurs.main.youtube_playlist', autospec=True)
 @patch('chineurs.main.facebook_group', autospec=True)
 @patch('chineurs.main.storage', spec=True)
 # pylint:disable=unused-argument
 def test_home_with_expired_session(
-        storage, facebook_group, youtube_playlist):
+        storage, facebook_group, youtube_playlist, resources):
     '''Home is served correctly with session cookie'''
     # pylint:disable=W0613,C0111
     def raise_fun(token):
